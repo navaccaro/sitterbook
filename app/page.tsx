@@ -47,9 +47,9 @@ export default function Home() {
             <Link href="/parents" className="transition hover:text-violet-600">Bookings</Link>
             <Link href="/dashboard" className="transition hover:text-violet-600">Calendar</Link>
           </nav>
-          <button className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-700">
-            Join waitlist
-          </button>
+          <Link href="/auth" className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-700">
+            Sign in
+          </Link>
         </header>
 
         <section className="grid items-center gap-10 pb-16 pt-16 lg:grid-cols-[1.1fr_0.9fr] lg:pt-20">
