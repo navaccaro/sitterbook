@@ -30,6 +30,23 @@ TOKEN_ENCRYPTION_KEY="a-long-random-secret"
 
 Add the same redirect URI to the Google OAuth client. `TOKEN_ENCRYPTION_KEY` protects Google tokens at rest. Without Google values, local demo sign-in and prefilled Google Calendar links remain available.
 
+## Deploy to Vercel
+
+1. Import the GitHub repository into Vercel.
+2. Add these production environment variables:
+
+```text
+DATABASE_URL
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+GOOGLE_REDIRECT_URI=https://your-domain.com/api/auth/google/callback
+TOKEN_ENCRYPTION_KEY
+```
+
+3. Deploy. Vercel runs `prisma migrate deploy` before the Next.js build.
+4. Add the deployed callback URL to the Google OAuth client.
+5. Add the custom domain in Vercel under **Settings > Domains**.
+
 ## Product direction
 
 The database is seeded automatically the first time the app reads from it. Set `DATABASE_URL` to your Neon PostgreSQL connection string before running migrations. Useful database commands:
