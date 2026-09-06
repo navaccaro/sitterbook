@@ -31,6 +31,7 @@ export async function GET() {
       userId: session.userId,
       name: session.name,
       email: session.email,
+      role: user?.role ?? "parent",
     },
     status,
   });
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
       userId: session.userId,
       name: session.name,
       email: session.email,
+      role: user?.role ?? "parent",
     },
     status,
   });

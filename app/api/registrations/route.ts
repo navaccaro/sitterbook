@@ -4,6 +4,7 @@ import {
   updateRegistrationStatus,
   upsertRegistrationRequest,
 } from "@/lib/store";
+import { getCurrentAdmin } from "@/lib/admin-auth";
 
 export async function GET() {
   const requests = await getRegistrationRequests();
@@ -53,6 +54,10 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  if (!(await getCurrentAdmin())) {
+    return NextResponse.json({ error: "Administrator access is required." }, { status: 403 });
+  }
+
   const body = (await request.json()) as { id?: string; status?: "approved" | "rejected" };
 
   if (!body.id || !body.status) {

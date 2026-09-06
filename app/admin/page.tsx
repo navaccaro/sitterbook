@@ -13,9 +13,20 @@ export default function AdminPage() {
   const [requests, setRequests] = useState<RegistrationRequest[]>([]);
   const [availability, setAvailability] = useState<AvailabilityBlock[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied">("checking");
 
   useEffect(() => {
     async function load() {
+      const sessionResponse = await fetch("/api/session");
+      const sessionData = sessionResponse.ok
+        ? (await sessionResponse.json()) as { session?: { role?: string } }
+        : null;
+
+      if (sessionData?.session?.role !== "admin") {
+        setAccessState("denied");
+        return;
+      }
+
       const [nextRequests, nextAvailability, nextBookings] = await Promise.all([
         readJson<RegistrationRequest[]>("/api/registrations"),
         readJson<AvailabilityBlock[]>("/api/availability"),
@@ -25,10 +36,25 @@ export default function AdminPage() {
       setRequests(nextRequests);
       setAvailability(nextAvailability);
       setBookings(nextBookings);
+      setAccessState("allowed");
     }
 
     void load();
   }, []);
+
+  if (accessState === "checking") {
+    return <main className="mx-auto max-w-3xl px-6 py-16 text-center text-slate-600">Checking administrator access…</main>;
+  }
+
+  if (accessState === "denied") {
+    return (
+      <main className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <h1 className="text-3xl font-bold text-slate-900">Administrator access required</h1>
+        <p className="mt-3 text-slate-600">Sign in with an approved administrator account to manage family requests.</p>
+        <Link href="/auth" className="mt-6 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white">Go to sign-in</Link>
+      </main>
+    );
+  }
 
   const pendingRequests = requests.filter((request) => request.status === "pending");
   const sitterBlocks = availability.map((block) => ({
