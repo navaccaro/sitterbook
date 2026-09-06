@@ -4,6 +4,7 @@ import { availabilityBlocks as defaultAvailabilityBlocks, bookings as defaultBoo
 import { demoRegistrationRequests, type RegistrationRequest } from "@/lib/registration";
 import { canBookBlock } from "@/lib/scheduler";
 import { prisma } from "@/lib/prisma";
+import { decryptSecret, encryptSecret } from "@/lib/secrets";
 
 export type Session = {
   token: string;
@@ -366,11 +367,12 @@ export async function saveGoogleTokens(
   tokens: { accessToken: string; refreshToken?: string; expiresAt?: Date },
 ) {
   await ensureSeeded();
+  const existing = await prisma.user.findUnique({ where: { id: userId }, select: { googleRefreshToken: true } });
   return prisma.user.update({
     where: { id: userId },
     data: {
-      googleAccessToken: tokens.accessToken,
-      googleRefreshToken: tokens.refreshToken,
+      googleAccessToken: encryptSecret(tokens.accessToken),
+      googleRefreshToken: tokens.refreshToken ? encryptSecret(tokens.refreshToken) : existing?.googleRefreshToken,
       googleTokenExpiry: tokens.expiresAt,
     },
   });
@@ -378,10 +380,20 @@ export async function saveGoogleTokens(
 
 export async function getGoogleTokens(userId: string) {
   await ensureSeeded();
-  return prisma.user.findUnique({
+  const tokens = await prisma.user.findUnique({
     where: { id: userId },
     select: { googleAccessToken: true, googleRefreshToken: true, googleTokenExpiry: true, googleCalendarId: true },
   });
+
+  if (!tokens) {
+    return null;
+  }
+
+  return {
+    ...tokens,
+    googleAccessToken: tokens.googleAccessToken ? decryptSecret(tokens.googleAccessToken) : null,
+    googleRefreshToken: tokens.googleRefreshToken ? decryptSecret(tokens.googleRefreshToken) : null,
+  };
 }
 
 export async function saveGoogleEventId(bookingId: string, googleEventId: string) {

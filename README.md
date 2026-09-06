@@ -25,9 +25,10 @@ To enable real Google sign-in and two-way booking sync, create Google OAuth web 
 GOOGLE_CLIENT_ID="..."
 GOOGLE_CLIENT_SECRET="..."
 GOOGLE_REDIRECT_URI="http://localhost:3000/api/auth/google/callback"
+TOKEN_ENCRYPTION_KEY="a-long-random-secret"
 ```
 
-Add the same redirect URI to the Google OAuth client. Without these values, local demo sign-in and prefilled Google Calendar links remain available.
+Add the same redirect URI to the Google OAuth client. `TOKEN_ENCRYPTION_KEY` protects Google tokens at rest. Without Google values, local demo sign-in and prefilled Google Calendar links remain available.
 
 ## Product direction
 
