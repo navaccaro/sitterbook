@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { AvailabilityBlock, Booking } from "@/lib/mock-data";
@@ -98,21 +99,31 @@ export default function ParentsPage() {
 
   if (isApproved === null) {
     return (
-      <main className="mx-auto max-w-4xl px-6 py-16 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Parents</p>
-        <h1 className="mt-3 text-3xl font-bold text-slate-900">Checking family access…</h1>
+      <main className="min-h-screen bg-[#f7f4f1] px-6 py-16">
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="mb-6 flex items-center justify-center gap-3">
+            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={40} height={40} className="h-10 w-10" />
+            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={180} height={44} className="h-8 w-auto" />
+          </div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#e86e52]">Parents</p>
+          <h1 className="mt-3 text-3xl font-bold text-[#1a2d2a]">Checking family access…</h1>
+        </div>
       </main>
     );
   }
 
   if (!isApproved) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
-        <div className="w-full rounded-[2rem] border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Access required</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-900">Family approval is still pending.</h1>
-          <p className="mt-4 text-lg text-slate-600">Your request must be approved before you can browse sitter windows and reserve time.</p>
-          <Link href="/auth" className="mt-8 inline-flex rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700">Go to sign-in</Link>
+      <main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center bg-[#f7f4f1] px-6 py-16">
+        <div className="w-full rounded-[2rem] border border-[#1a2d2a]/10 bg-white p-8 text-center shadow-sm">
+          <div className="mb-5 flex items-center justify-center gap-3">
+            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={40} height={40} className="h-10 w-10" />
+            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={180} height={44} className="h-8 w-auto" />
+          </div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#e86e52]">Access required</p>
+          <h1 className="mt-3 text-4xl font-black tracking-tight text-[#1a2d2a]">Family approval is still pending.</h1>
+          <p className="mt-4 text-lg text-[#53605a]">Your request must be approved before you can browse sitter windows and reserve time.</p>
+          <Link href="/auth" className="mt-8 inline-flex rounded-full bg-[#e86e52] px-6 py-3 text-sm font-semibold text-[#1a2d2a] transition hover:bg-[#ef876d]">Go to sign-in</Link>
         </div>
       </main>
     );
@@ -201,27 +212,27 @@ export default function ParentsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
+    <main className="mx-auto max-w-6xl bg-[#f7f4f1] px-6 py-10">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Parents</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">Available babysitting windows</h1>
+        <div className="flex items-center gap-3">
+          <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={42} height={42} className="h-11 w-11" />
+          <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={190} height={44} className="h-8 w-auto" />
         </div>
-        <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
+        <div className="flex items-center gap-3 rounded-full border border-[#1a2d2a]/10 bg-white px-4 py-2 shadow-sm">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Family</p>
-            <p className="text-sm font-semibold text-slate-900">{familyProfile?.name ?? "Your family"}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a847d]">Family</p>
+            <p className="text-sm font-semibold text-[#1a2d2a]">{familyProfile?.name ?? "Your family"}</p>
           </div>
           <button
             onClick={handleSignOut}
-            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+            className="rounded-full border border-[#1a2d2a]/15 px-3 py-1.5 text-xs font-semibold text-[#1a2d2a] transition hover:bg-[#f7f4f1]"
           >
             Sign out
           </button>
           <button
             onClick={syncCalendar}
             disabled={isSyncingCalendar}
-            className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-wait disabled:opacity-60"
+            className="rounded-full bg-[#e86e52] px-3 py-1.5 text-xs font-semibold text-[#1a2d2a] transition hover:bg-[#ef876d] disabled:cursor-wait disabled:opacity-60"
           >
             {isSyncingCalendar ? "Syncing…" : "Sync calendar"}
           </button>

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { AvailabilityBlock, Booking } from "@/lib/mock-data";
@@ -43,15 +44,31 @@ export default function AdminPage() {
   }, []);
 
   if (accessState === "checking") {
-    return <main className="mx-auto max-w-3xl px-6 py-16 text-center text-slate-600">Checking administrator access…</main>;
+    return (
+      <main className="min-h-screen bg-[#f7f4f1] px-6 py-16 text-center text-[#53605a]">
+        <div className="mx-auto max-w-3xl">
+          <div className="mb-5 flex items-center justify-center gap-3">
+            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={40} height={40} className="h-10 w-10" />
+            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={180} height={44} className="h-8 w-auto" />
+          </div>
+          Checking administrator access…
+        </div>
+      </main>
+    );
   }
 
   if (accessState === "denied") {
     return (
-      <main className="mx-auto max-w-3xl px-6 py-16 text-center">
-        <h1 className="text-3xl font-bold text-slate-900">Administrator access required</h1>
-        <p className="mt-3 text-slate-600">Sign in with an approved administrator account to manage family requests.</p>
-        <Link href="/auth" className="mt-6 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white">Go to sign-in</Link>
+      <main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center bg-[#f7f4f1] px-6 py-16 text-center">
+        <div className="w-full rounded-[2rem] border border-[#1a2d2a]/10 bg-white p-8 shadow-sm">
+          <div className="mb-5 flex items-center justify-center gap-3">
+            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={40} height={40} className="h-10 w-10" />
+            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={180} height={44} className="h-8 w-auto" />
+          </div>
+          <h1 className="text-3xl font-bold text-[#1a2d2a]">Administrator access required</h1>
+          <p className="mt-3 text-[#53605a]">Sign in with an approved administrator account to manage family requests.</p>
+          <Link href="/auth" className="mt-6 inline-flex rounded-full bg-[#e86e52] px-5 py-3 text-sm font-semibold text-[#1a2d2a]">Go to sign-in</Link>
+        </div>
       </main>
     );
   }
@@ -76,17 +93,16 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-[#f7f4f1]">
       <div className="mx-auto max-w-7xl px-6 py-8 sm:px-8 lg:px-10">
         <header className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Admin</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Approvals and oversight</h1>
-            <p className="mt-2 max-w-xl text-slate-600">Review new family requests before they can browse and reserve sitter time.</p>
+          <div className="flex items-center gap-3">
+            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={42} height={42} className="h-11 w-11" />
+            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={190} height={44} className="h-8 w-auto" />
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/auth" className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Preview sign-in</Link>
-            <Link href="/dashboard" className="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">Sitter dashboard</Link>
+            <Link href="/auth" className="rounded-full border border-[#1a2d2a]/15 bg-white px-4 py-2.5 text-sm font-semibold text-[#1a2d2a] transition hover:bg-[#f7f4f1]">Preview sign-in</Link>
+            <Link href="/dashboard" className="rounded-full bg-[#1a2d2a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#304039]">Sitter dashboard</Link>
           </div>
         </header>
 

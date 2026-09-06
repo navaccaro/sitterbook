@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -129,47 +130,47 @@ export default function AuthPage() {
   const isApproved = request?.status === "approved";
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#f8f5ff,_#f4f7ff_42%,_#eef2ff_100%)] px-6 py-8 sm:px-8 lg:px-10">
+    <main className="min-h-screen bg-[#f7f4f1] px-6 py-8 sm:px-8 lg:px-10">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col">
         <header className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">SB</span>
-            <span className="text-lg font-semibold tracking-tight text-slate-900">SitterBook</span>
+          <Link href="/" className="flex items-center gap-3" aria-label="SitterBook home">
+            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={40} height={40} className="h-10 w-10" />
+            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={180} height={44} className="h-8 w-auto" />
           </Link>
-          <Link href="/" className="text-sm font-semibold text-slate-500 transition hover:text-slate-900">Back home</Link>
+          <Link href="/" className="text-sm font-semibold text-[#53605a] transition hover:text-[#1a2d2a]">Back home</Link>
         </header>
 
         <div className="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Family access</p>
-            <h1 className="mt-4 max-w-lg text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">Join a trusted babysitting circle.</h1>
-            <p className="mt-5 max-w-lg text-lg leading-8 text-slate-600">Sign in with the account your family uses. An admin reviews each new family before booking access is enabled.</p>
-            <div className="mt-8 space-y-3 text-sm text-slate-600">
-              <p className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700">1</span>Sign in with Google</p>
-              <p className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700">2</span>Admin reviews your request</p>
-              <p className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700">3</span>Book once your family is approved</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#e86e52]">Family access</p>
+            <h1 className="mt-4 max-w-lg text-4xl font-black tracking-[-0.05em] text-[#1a2d2a] sm:text-5xl">Join a trusted babysitting circle.</h1>
+            <p className="mt-5 max-w-lg text-lg leading-8 text-[#53605a]">Sign in with the account your family uses. An admin reviews each new family before booking access is enabled.</p>
+            <div className="mt-8 space-y-3 text-sm text-[#53605a]">
+              <p className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#dfece5] font-bold text-[#1a2d2a]">1</span>Sign in with Google</p>
+              <p className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#dfece5] font-bold text-[#1a2d2a]">2</span>Admin reviews your request</p>
+              <p className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#dfece5] font-bold text-[#1a2d2a]">3</span>Book once your family is approved</p>
             </div>
           </div>
 
-          <section className="mx-auto w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-7 shadow-[0_24px_60px_rgba(15,23,42,0.10)] sm:p-9">
+          <section className="mx-auto w-full max-w-md rounded-[2rem] border border-[#1a2d2a]/10 bg-white p-7 shadow-[0_24px_60px_rgba(26,45,42,0.10)] sm:p-9">
             {isApproved ? (
               <div>
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-xl text-emerald-700">✓</span>
-                <h2 className="mt-6 text-2xl font-bold text-slate-900">You&apos;re approved</h2>
-                <p className="mt-3 leading-7 text-slate-600">Your family can now browse open sitter windows and request a booking.</p>
-                <Link href="/parents" className="mt-7 block rounded-xl bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-700">Explore availability</Link>
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#dfece5] text-xl text-[#1a2d2a]">✓</span>
+                <h2 className="mt-6 text-2xl font-bold text-[#1a2d2a]">You&apos;re approved</h2>
+                <p className="mt-3 leading-7 text-[#53605a]">Your family can now browse open sitter windows and request a booking.</p>
+                <Link href="/parents" className="mt-7 block rounded-xl bg-[#e86e52] px-4 py-3 text-center text-sm font-semibold text-[#1a2d2a] transition hover:bg-[#ef876d]">Explore availability</Link>
               </div>
             ) : request ? (
               <div>
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-xl text-amber-700">⌛</span>
-                <h2 className="mt-6 text-2xl font-bold text-slate-900">Approval is pending</h2>
-                <p className="mt-3 leading-7 text-slate-600">We sent your request to the SitterBook admin. You&apos;ll be able to book once your family is approved.</p>
-                <div className="mt-6 rounded-2xl bg-slate-50 p-4">
-                  <p className="font-semibold text-slate-900">{request.name}</p>
-                  <p className="mt-1 text-sm text-slate-500">{request.email}</p>
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-amber-600">Pending review</p>
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f2ead7] text-xl text-[#1a2d2a]">⌛</span>
+                <h2 className="mt-6 text-2xl font-bold text-[#1a2d2a]">Approval is pending</h2>
+                <p className="mt-3 leading-7 text-[#53605a]">We sent your request to the SitterBook admin. You&apos;ll be able to book once your family is approved.</p>
+                <div className="mt-6 rounded-2xl bg-[#f7f4f1] p-4">
+                  <p className="font-semibold text-[#1a2d2a]">{request.name}</p>
+                  <p className="mt-1 text-sm text-[#53605a]">{request.email}</p>
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-[#e86e52]">Pending review</p>
                 </div>
-                <Link href="/" className="mt-6 block text-center text-sm font-semibold text-slate-500 transition hover:text-slate-900">Return home</Link>
+                <Link href="/" className="mt-6 block text-center text-sm font-semibold text-[#53605a] transition hover:text-[#1a2d2a]">Return home</Link>
               </div>
             ) : profile ? (
               <form onSubmit={submitRegistration}>
@@ -203,10 +204,10 @@ export default function AuthPage() {
                   <div className="mt-3 space-y-3">
                     <input required aria-label="Street address" placeholder="Street address" value={profile.addressLine1} onChange={(event) => setProfile({ ...profile, addressLine1: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
                     <input aria-label="Apartment or unit" placeholder="Apartment, unit, or access details (optional)" value={profile.addressLine2} onChange={(event) => setProfile({ ...profile, addressLine2: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
-                    <div className="grid gap-3 sm:grid-cols-[1.4fr_0.7fr_0.9fr]">
-                      <input required aria-label="City" placeholder="City" value={profile.city} onChange={(event) => setProfile({ ...profile, city: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
-                      <input required aria-label="State" placeholder="State" value={profile.state} onChange={(event) => setProfile({ ...profile, state: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
-                      <input required aria-label="Postal code" placeholder="ZIP / postal" value={profile.postalCode} onChange={(event) => setProfile({ ...profile, postalCode: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    <div className="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.7fr)_minmax(0,0.9fr)]">
+                      <input required aria-label="City" placeholder="City" value={profile.city} onChange={(event) => setProfile({ ...profile, city: event.target.value })} className="min-w-0 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                      <input required aria-label="State" placeholder="State" value={profile.state} onChange={(event) => setProfile({ ...profile, state: event.target.value })} className="min-w-0 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                      <input required aria-label="Postal code" placeholder="ZIP / postal" value={profile.postalCode} onChange={(event) => setProfile({ ...profile, postalCode: event.target.value })} className="min-w-0 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
                     </div>
                   </div>
                 </div>

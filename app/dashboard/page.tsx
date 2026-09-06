@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { getUserById, type AvailabilityBlock, type Booking } from "@/lib/mock-data";
 import { getBlockDurationHours } from "@/lib/scheduler";
@@ -173,15 +174,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-[#f7f4f1]">
       <div className="mx-auto max-w-7xl px-6 py-8 sm:px-8 lg:px-10">
         <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Sitter dashboard</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Charlotte&apos;s schedule</h1>
-            <p className="mt-2 max-w-xl text-slate-600">Keep your open hours current so approved families can book with confidence.</p>
+          <div className="flex items-center gap-3">
+            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={42} height={42} className="h-11 w-11" />
+            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={190} height={44} className="h-8 w-auto" />
           </div>
-          <button onClick={startNewBlock} className="rounded-full bg-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-500">
+          <button onClick={startNewBlock} className="rounded-full bg-[#e86e52] px-5 py-3 text-sm font-semibold text-[#1a2d2a] shadow-lg shadow-[#e86e52]/20 transition hover:bg-[#ef876d]">
             + New availability
           </button>
         </div>
