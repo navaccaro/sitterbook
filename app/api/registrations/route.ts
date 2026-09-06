@@ -11,14 +11,41 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { name?: string; email?: string; provider?: "google" };
+  const body = (await request.json()) as {
+    name?: string;
+    email?: string;
+    provider?: "google";
+    primaryContactName?: string;
+    primaryPhone?: string;
+    secondaryContactName?: string;
+    secondaryPhone?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    additionalInfo?: string;
+  };
 
-  if (!body.name || !body.email) {
-    return NextResponse.json({ error: "Name and email are required." }, { status: 400 });
+  if (!body.name || !body.email || !body.primaryContactName || !body.primaryPhone || !body.addressLine1 || !body.city || !body.state || !body.postalCode) {
+    return NextResponse.json({ error: "Family name, primary contact, phone, and complete address are required." }, { status: 400 });
   }
 
   const next = await upsertRegistrationRequest(
-    { name: body.name, email: body.email },
+    {
+      name: body.name,
+      email: body.email,
+      primaryContactName: body.primaryContactName ?? "",
+      primaryPhone: body.primaryPhone ?? "",
+      secondaryContactName: body.secondaryContactName ?? "",
+      secondaryPhone: body.secondaryPhone ?? "",
+      addressLine1: body.addressLine1 ?? "",
+      addressLine2: body.addressLine2 ?? "",
+      city: body.city ?? "",
+      state: body.state ?? "",
+      postalCode: body.postalCode ?? "",
+      additionalInfo: body.additionalInfo ?? "",
+    },
     body.provider ?? "google",
   );
 

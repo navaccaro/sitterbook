@@ -50,6 +50,16 @@ function toRegistrationRequest(request: {
   email: string;
   provider: string;
   status: string;
+  primaryContactName: string;
+  primaryPhone: string;
+  secondaryContactName: string;
+  secondaryPhone: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  additionalInfo: string;
   requestedAt: Date;
 }): RegistrationRequest {
   return {
@@ -58,6 +68,16 @@ function toRegistrationRequest(request: {
     email: request.email,
     provider: request.provider as RegistrationRequest["provider"],
     status: request.status as RegistrationRequest["status"],
+    primaryContactName: request.primaryContactName,
+    primaryPhone: request.primaryPhone,
+    secondaryContactName: request.secondaryContactName,
+    secondaryPhone: request.secondaryPhone,
+    addressLine1: request.addressLine1,
+    addressLine2: request.addressLine2,
+    city: request.city,
+    state: request.state,
+    postalCode: request.postalCode,
+    additionalInfo: request.additionalInfo,
     requestedAt: request.requestedAt.toISOString(),
   };
 }
@@ -71,6 +91,8 @@ function toBooking(booking: {
   end: Date;
   status: string;
   parentName: string;
+  notes: string;
+  googleEventId?: string | null;
 }): Booking {
   return {
     id: booking.id,
@@ -81,6 +103,8 @@ function toBooking(booking: {
     end: toWallClockString(booking.end),
     status: booking.status as Booking["status"],
     parentName: booking.parentName,
+    notes: booking.notes,
+    ...(booking.googleEventId ? { googleEventId: booking.googleEventId } : {}),
   };
 }
 
@@ -148,8 +172,41 @@ export async function getUserById(userId: string): Promise<User | null> {
   return user ? toUser(user) : null;
 }
 
+export async function upsertGoogleUser(profile: { name: string; email: string }) {
+  await ensureSeeded();
+  const email = normaliseEmail(profile.email);
+  const existing = await prisma.user.findUnique({ where: { email } });
+
+  if (existing) {
+    return existing;
+  }
+
+  return prisma.user.create({
+    data: {
+      id: `family-${email.replace(/[^a-z0-9]+/g, "-")}`,
+      name: profile.name.trim() || "Google family",
+      email,
+      role: "parent",
+      approved: false,
+    },
+  });
+}
+
 export async function upsertRegistrationRequest(
-  profile: { name: string; email: string },
+  profile: {
+    name: string;
+    email: string;
+    primaryContactName: string;
+    primaryPhone: string;
+    secondaryContactName: string;
+    secondaryPhone: string;
+    addressLine1: string;
+    addressLine2: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    additionalInfo: string;
+  },
   provider: "google" = "google",
 ) {
   await ensureSeeded();
@@ -159,7 +216,20 @@ export async function upsertRegistrationRequest(
   if (existing) {
     const updated = await prisma.registrationRequest.update({
       where: { id: existing.id },
-      data: { name: profile.name.trim() || existing.name, provider },
+      data: {
+        name: profile.name.trim() || existing.name,
+        provider,
+        primaryContactName: profile.primaryContactName.trim(),
+        primaryPhone: profile.primaryPhone.trim(),
+        secondaryContactName: profile.secondaryContactName.trim(),
+        secondaryPhone: profile.secondaryPhone.trim(),
+        addressLine1: profile.addressLine1.trim(),
+        addressLine2: profile.addressLine2.trim(),
+        city: profile.city.trim(),
+        state: profile.state.trim(),
+        postalCode: profile.postalCode.trim(),
+        additionalInfo: profile.additionalInfo.trim(),
+      },
     });
     return toRegistrationRequest(updated);
   }
@@ -171,6 +241,16 @@ export async function upsertRegistrationRequest(
       email,
       provider,
       status: "pending",
+      primaryContactName: profile.primaryContactName.trim(),
+      primaryPhone: profile.primaryPhone.trim(),
+      secondaryContactName: profile.secondaryContactName.trim(),
+      secondaryPhone: profile.secondaryPhone.trim(),
+      addressLine1: profile.addressLine1.trim(),
+      addressLine2: profile.addressLine2.trim(),
+      city: profile.city.trim(),
+      state: profile.state.trim(),
+      postalCode: profile.postalCode.trim(),
+      additionalInfo: profile.additionalInfo.trim(),
       requestedAt: new Date(),
     },
   });
@@ -242,6 +322,7 @@ export async function createBookingForBlock(
   parentName: string,
   candidateStart: string,
   candidateEnd: string,
+  notes: string,
 ) {
   await ensureSeeded();
   const bookings = await getBookings();
@@ -259,6 +340,7 @@ export async function createBookingForBlock(
     end: toWallClockDate(candidateEnd),
     status: "confirmed",
     parentName,
+    notes: notes.trim(),
   } as const;
 
   await prisma.booking.create({ data: booking });
@@ -277,6 +359,53 @@ export async function cancelBooking(bookingId: string) {
     where: { id: bookingId },
     data: { status: "cancelled" },
   }));
+}
+
+export async function saveGoogleTokens(
+  userId: string,
+  tokens: { accessToken: string; refreshToken?: string; expiresAt?: Date },
+) {
+  await ensureSeeded();
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      googleAccessToken: tokens.accessToken,
+      googleRefreshToken: tokens.refreshToken,
+      googleTokenExpiry: tokens.expiresAt,
+    },
+  });
+}
+
+export async function getGoogleTokens(userId: string) {
+  await ensureSeeded();
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { googleAccessToken: true, googleRefreshToken: true, googleTokenExpiry: true, googleCalendarId: true },
+  });
+}
+
+export async function saveGoogleEventId(bookingId: string, googleEventId: string) {
+  await ensureSeeded();
+  return prisma.booking.update({ where: { id: bookingId }, data: { googleEventId } });
+}
+
+export async function getBookingById(bookingId: string) {
+  await ensureSeeded();
+  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+  return booking ? toBooking(booking) : null;
+}
+
+export async function updateBookingSchedule(bookingId: string, updates: { start?: string; end?: string; status?: "confirmed" | "cancelled" }) {
+  await ensureSeeded();
+  const booking = await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      start: updates.start ? toWallClockDate(updates.start) : undefined,
+      end: updates.end ? toWallClockDate(updates.end) : undefined,
+      status: updates.status,
+    },
+  });
+  return toBooking(booking);
 }
 
 export async function createSession(profile: { name: string; email: string }) {

@@ -7,6 +7,16 @@ export type RegistrationRequest = {
   email: string;
   provider: RegistrationProvider;
   status: RegistrationStatus;
+  primaryContactName: string;
+  primaryPhone: string;
+  secondaryContactName: string;
+  secondaryPhone: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  additionalInfo: string;
   requestedAt: string;
 };
 
@@ -20,6 +30,16 @@ export const demoRegistrationRequests: RegistrationRequest[] = [
     email: "lopez@example.com",
     provider: "google",
     status: "pending",
+    primaryContactName: "",
+    primaryPhone: "",
+    secondaryContactName: "",
+    secondaryPhone: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    additionalInfo: "",
     requestedAt: "2026-09-06T14:30:00.000Z",
   },
 ];
@@ -95,6 +115,16 @@ export function upsertRegistrationRequest(
     email: profile.email.trim(),
     provider,
     status: "pending",
+    primaryContactName: "",
+    primaryPhone: "",
+    secondaryContactName: "",
+    secondaryPhone: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    additionalInfo: "",
     requestedAt: new Date().toISOString(),
   };
 

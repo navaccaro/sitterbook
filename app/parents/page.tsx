@@ -35,9 +35,11 @@ export default function ParentsPage() {
   const [availability, setAvailability] = useState<AvailabilityBlock[]>([]);
   const [currentBookings, setCurrentBookings] = useState<Booking[]>([]);
   const [candidateTimes, setCandidateTimes] = useState<Record<string, CandidateTimes>>({});
+  const [bookingNotes, setBookingNotes] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [isApproved, setIsApproved] = useState<boolean | null>(null);
   const [familyProfile, setFamilyProfile] = useState<FamilyProfile | null>(null);
+  const [isSyncingCalendar, setIsSyncingCalendar] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -149,6 +151,7 @@ export default function ParentsPage() {
         parentEmail: familyProfile.email,
         start: candidateStart,
         end: candidateEnd,
+        notes: bookingNotes[block.id]?.trim() ?? "",
       }),
     });
 
@@ -185,6 +188,18 @@ export default function ParentsPage() {
     setMessage("Reservation released. That time is available again.");
   }
 
+  async function syncCalendar() {
+    setIsSyncingCalendar(true);
+    const response = await fetch("/api/calendar/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const data = (await response.json()) as { synced?: number; message?: string; error?: string };
+    setMessage(response.ok ? `${data.synced ?? 0} booking${data.synced === 1 ? "" : "s"} synced to Google Calendar.` : data.error ?? "Calendar sync failed.");
+    setIsSyncingCalendar(false);
+  }
+
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -202,6 +217,13 @@ export default function ParentsPage() {
             className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
           >
             Sign out
+          </button>
+          <button
+            onClick={syncCalendar}
+            disabled={isSyncingCalendar}
+            className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-wait disabled:opacity-60"
+          >
+            {isSyncingCalendar ? "Syncing…" : "Sync calendar"}
           </button>
         </div>
       </div>
@@ -268,6 +290,17 @@ export default function ParentsPage() {
                   </label>
                 </div>
               </div>
+
+              <label className="mt-4 block text-xs font-medium text-slate-500">
+                Notes for the sitter <span className="font-normal text-slate-400">(optional)</span>
+                <textarea
+                  rows={3}
+                  value={bookingNotes[block.id] ?? ""}
+                  onChange={(event) => setBookingNotes((current) => ({ ...current, [block.id]: event.target.value }))}
+                  placeholder="Allergies, bedtime, pets, entry instructions, or anything useful for this visit"
+                  className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 outline-none ring-violet-200 focus:ring-4"
+                />
+              </label>
 
               <div className="mt-4 flex items-center justify-between text-sm">
                 <span className="text-slate-500">Availability check</span>

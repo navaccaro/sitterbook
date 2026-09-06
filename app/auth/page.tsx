@@ -8,7 +8,34 @@ import type { RegistrationRequest } from "@/lib/registration";
 type Profile = {
   name: string;
   email: string;
+  primaryContactName: string;
+  primaryPhone: string;
+  secondaryContactName: string;
+  secondaryPhone: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  additionalInfo: string;
 };
+
+function emptyProfile(name: string, email: string): Profile {
+  return {
+    name,
+    email,
+    primaryContactName: "",
+    primaryPhone: "",
+    secondaryContactName: "",
+    secondaryPhone: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    additionalInfo: "",
+  };
+}
 
 async function fetchRegistrationByEmail(email: string) {
   const requests = await fetch("/api/registrations").then((response) =>
@@ -40,7 +67,7 @@ export default function AuthPage() {
         return;
       }
 
-      setProfile(data.session);
+      setProfile(currentRequest ? { ...emptyProfile(currentRequest.name, currentRequest.email), ...currentRequest } : emptyProfile(data.session.name, data.session.email));
       setRequest(currentRequest);
     }
 
@@ -48,7 +75,7 @@ export default function AuthPage() {
   }, [router]);
 
   async function continueWithGoogle() {
-    const nextProfile = { name: "The New Family", email: "new.family@example.com" };
+    const nextProfile = emptyProfile("The New Family", "new.family@example.com");
     const existing = await fetchRegistrationByEmail(nextProfile.email);
 
     if (existing?.status === "approved") {
@@ -68,6 +95,10 @@ export default function AuthPage() {
     setRequest(existing ?? null);
   }
 
+  function continueWithGoogleDemo() {
+    void continueWithGoogle();
+  }
+
   async function submitRegistration(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -76,36 +107,22 @@ export default function AuthPage() {
     }
 
     setIsSubmitting(true);
-    const existing = await fetchRegistrationByEmail(profile.email);
-
-    if (existing?.status === "approved") {
-      setRequest(existing);
-      const response = await fetch("/api/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile),
-      });
-
-      if (response.ok) {
-        router.replace("/parents");
-      }
-      setIsSubmitting(false);
-      return;
-    }
-
     const response = await fetch("/api/registrations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: profile.name, email: profile.email, provider: "google" }),
+      body: JSON.stringify({ ...profile, provider: "google" }),
     });
 
     const nextRequest = (await response.json()) as RegistrationRequest;
-    await fetch("/api/session", {
+    const sessionResponse = await fetch("/api/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(profile),
     });
     setRequest(nextRequest);
+    if (nextRequest.status === "approved" && sessionResponse.ok) {
+      router.replace("/parents");
+    }
     setIsSubmitting(false);
   }
 
@@ -167,6 +184,36 @@ export default function AuthPage() {
                   Google email
                   <input required type="email" value={profile.email} onChange={(event) => setProfile({ ...profile, email: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal text-slate-900 outline-none ring-violet-200 focus:ring-4" />
                 </label>
+                <div className="mt-6 border-t border-slate-100 pt-5">
+                  <p className="text-sm font-semibold text-slate-900">Primary contact</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <input required aria-label="Primary contact name" placeholder="Primary contact name" value={profile.primaryContactName} onChange={(event) => setProfile({ ...profile, primaryContactName: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    <input required type="tel" aria-label="Primary contact phone" placeholder="Primary phone" value={profile.primaryPhone} onChange={(event) => setProfile({ ...profile, primaryPhone: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                  </div>
+                </div>
+                <div className="mt-5">
+                  <p className="text-sm font-semibold text-slate-900">Secondary contact <span className="font-normal text-slate-400">(optional)</span></p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <input aria-label="Secondary contact name" placeholder="Secondary contact name" value={profile.secondaryContactName} onChange={(event) => setProfile({ ...profile, secondaryContactName: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    <input type="tel" aria-label="Secondary contact phone" placeholder="Secondary phone" value={profile.secondaryPhone} onChange={(event) => setProfile({ ...profile, secondaryPhone: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                  </div>
+                </div>
+                <div className="mt-5">
+                  <p className="text-sm font-semibold text-slate-900">Home address</p>
+                  <div className="mt-3 space-y-3">
+                    <input required aria-label="Street address" placeholder="Street address" value={profile.addressLine1} onChange={(event) => setProfile({ ...profile, addressLine1: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    <input aria-label="Apartment or unit" placeholder="Apartment, unit, or access details (optional)" value={profile.addressLine2} onChange={(event) => setProfile({ ...profile, addressLine2: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    <div className="grid gap-3 sm:grid-cols-[1.4fr_0.7fr_0.9fr]">
+                      <input required aria-label="City" placeholder="City" value={profile.city} onChange={(event) => setProfile({ ...profile, city: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                      <input required aria-label="State" placeholder="State" value={profile.state} onChange={(event) => setProfile({ ...profile, state: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                      <input required aria-label="Postal code" placeholder="ZIP / postal" value={profile.postalCode} onChange={(event) => setProfile({ ...profile, postalCode: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    </div>
+                  </div>
+                </div>
+                <label className="mt-5 block text-sm font-semibold text-slate-700">
+                  Anything the sitter should know? <span className="font-normal text-slate-400">(optional)</span>
+                  <textarea rows={3} value={profile.additionalInfo} onChange={(event) => setProfile({ ...profile, additionalInfo: event.target.value })} placeholder="Pets, allergies, accessibility needs, routines, or other context" className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 font-normal text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                </label>
                 <button disabled={isSubmitting} className="mt-6 w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:cursor-wait disabled:opacity-60">Send approval request</button>
               </form>
             ) : (
@@ -174,8 +221,9 @@ export default function AuthPage() {
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-violet-600">Welcome</p>
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">Sign in to get started</h2>
                 <p className="mt-3 text-sm leading-6 text-slate-600">New families are held for admin approval before they can make bookings.</p>
-                <button onClick={continueWithGoogle} className="mt-7 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"><span className="text-base font-bold text-blue-600">G</span> Continue with Google</button>
-                <p className="mt-5 text-center text-xs leading-5 text-slate-400">OAuth demo mode. Connect Google credentials before production use.</p>
+                <a href="/api/auth/google" className="mt-7 flex w-full items-center justify-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"><span className="text-base font-bold text-blue-300">G</span> Continue with Google</a>
+                <button onClick={continueWithGoogleDemo} className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Use local demo profile</button>
+                <p className="mt-5 text-center text-xs leading-5 text-slate-400">Google OAuth requires credentials in the server environment. The local demo remains available for development.</p>
               </div>
             )}
           </section>

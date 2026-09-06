@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     parentEmail?: string;
     start?: string;
     end?: string;
+    notes?: string;
   };
 
   if (!body.blockId || !body.parentId || !body.parentName || !body.parentEmail || !body.start || !body.end) {
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
       body.parentName,
       body.start,
       body.end,
+      body.notes ?? "",
     );
 
     return NextResponse.json(booking);

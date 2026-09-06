@@ -19,6 +19,16 @@ npm run dev
 
 Then open http://localhost:3000.
 
+To enable real Google sign-in and two-way booking sync, create Google OAuth web credentials and set these values in `.env`:
+
+```bash
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+GOOGLE_REDIRECT_URI="http://localhost:3000/api/auth/google/callback"
+```
+
+Add the same redirect URI to the Google OAuth client. Without these values, local demo sign-in and prefilled Google Calendar links remain available.
+
 ## Product direction
 
 The local database is seeded automatically the first time the app reads from it. Useful database commands:
@@ -39,3 +49,5 @@ Implemented capabilities include:
 - HTTP-only family sessions
 - Prisma-backed persistent data layer
 - server-side approval and booking ownership checks
+- Google OAuth sessions with refreshable Calendar API tokens
+- Google Calendar booking synchronization with stable event IDs

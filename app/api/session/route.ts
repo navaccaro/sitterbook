@@ -44,13 +44,15 @@ export async function POST(request: Request) {
   }
 
   const session = await createSession({ name: body.name, email: body.email });
+  const user = await getUserById(session.userId);
+  const status = user?.role === "parent" && user.approved ? "approved" : await getSessionStatus(session.email);
   const response = NextResponse.json({
     session: {
       userId: session.userId,
       name: session.name,
       email: session.email,
     },
-    status: await getSessionStatus(session.email),
+    status,
   });
 
   response.cookies.set(sessionCookieName, session.token, sessionCookieOptions);

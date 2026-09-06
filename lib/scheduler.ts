@@ -57,6 +57,7 @@ export function createBooking(
   candidateStart: string,
   candidateEnd: string,
   status: Booking["status"] = "confirmed",
+  notes = "",
 ): Booking {
   if (!canBookBlock(block, candidateStart, candidateEnd)) {
     throw new Error("Booking request conflicts with the availability window.");
@@ -71,5 +72,6 @@ export function createBooking(
     end: candidateEnd,
     status,
     parentName,
+    notes,
   };
 }

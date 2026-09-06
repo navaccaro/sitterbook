@@ -28,6 +28,8 @@ export type Booking = {
   end: string;
   status: BookingStatus;
   parentName: string;
+  notes: string;
+  googleEventId?: string;
 };
 
 export const users: User[] = [
@@ -105,6 +107,7 @@ export const bookings: Booking[] = [
     end: "2026-09-11T20:30:00",
     status: "confirmed",
     parentName: "The Smiths",
+    notes: "Please text when you arrive. The kids eat dinner around 6:30.",
   },
   {
     id: "booking-2",
@@ -115,6 +118,7 @@ export const bookings: Booking[] = [
     end: "2026-09-13T21:00:00",
     status: "pending",
     parentName: "The Smiths",
+    notes: "Bedtime routine is written on the fridge.",
   },
 ];
 

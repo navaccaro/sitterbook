@@ -103,6 +103,12 @@ export default function AdminPage() {
                         <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{request.provider} OAuth</span>
                       </div>
                       <p className="mt-1 text-sm text-slate-500">{request.email}</p>
+                      <div className="mt-3 grid gap-1 text-xs text-slate-500 sm:grid-cols-2">
+                        <p><span className="font-semibold text-slate-700">Primary:</span> {request.primaryContactName} · {request.primaryPhone}</p>
+                        {request.secondaryContactName && <p><span className="font-semibold text-slate-700">Secondary:</span> {request.secondaryContactName} · {request.secondaryPhone}</p>}
+                        <p className="sm:col-span-2"><span className="font-semibold text-slate-700">Address:</span> {[request.addressLine1, request.addressLine2, request.city, request.state, request.postalCode].filter(Boolean).join(", ")}</p>
+                      </div>
+                      {request.additionalInfo && <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600"><span className="font-semibold text-slate-700">Additional info:</span> {request.additionalInfo}</p>}
                       <p className="mt-3 text-xs text-slate-400">Requested {new Date(request.requestedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
                     </div>
                     <div className="flex gap-2">

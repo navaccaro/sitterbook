@@ -8,12 +8,22 @@ datasource db {
 }
 
 model RegistrationRequest {
-  id          String   @id
-  name        String
-  email       String   @unique
-  provider    String
-  status      String
-  requestedAt DateTime
+  id                   String   @id
+  name                 String
+  email                String   @unique
+  provider             String
+  status               String
+  primaryContactName   String   @default("")
+  primaryPhone         String   @default("")
+  secondaryContactName String   @default("")
+  secondaryPhone       String   @default("")
+  addressLine1         String   @default("")
+  addressLine2         String   @default("")
+  city                 String   @default("")
+  state                String   @default("")
+  postalCode           String   @default("")
+  additionalInfo       String   @default("")
+  requestedAt          DateTime
 }
 
 model AvailabilityBlock {
@@ -34,14 +44,20 @@ model Booking {
   end            DateTime
   status         String
   parentName     String
+  notes          String   @default("")
+  googleEventId  String?
 }
 
 model User {
-  id       String  @id
-  name     String
-  email    String  @unique
-  role     String
-  approved Boolean
+  id                 String  @id
+  name               String
+  email              String   @unique
+  role               String
+  approved           Boolean
+  googleAccessToken  String?
+  googleRefreshToken String?
+  googleTokenExpiry  DateTime?
+  googleCalendarId   String?
 }
 
 model Session {

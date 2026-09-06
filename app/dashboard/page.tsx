@@ -365,6 +365,7 @@ export default function DashboardPage() {
                       <span className="rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-semibold text-emerald-700">{booking.status}</span>
                     </div>
                     <p className="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-500">{getUserById(booking.parentId)?.email ?? "family@example.com"}</p>
+                    {booking.notes && <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900"><span className="font-semibold">Family notes:</span> {booking.notes}</p>}
                     <a
                       href={googleCalendarUrl(`SitterBook: ${booking.parentName}`, booking.start, booking.end, "Confirmed SitterBook booking")}
                       target="_blank"
