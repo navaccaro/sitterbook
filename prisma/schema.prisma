@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model RegistrationRequest {
+  id          String   @id
+  name        String
+  email       String   @unique
+  provider    String
+  status      String
+  requestedAt DateTime
+}
+
+model AvailabilityBlock {
+  id       String   @id
+  sitterId String
+  start    DateTime
+  end      DateTime
+  status   String
+  label    String
+}
+
+model Booking {
+  id             String   @id
+  availabilityId String
+  parentId       String
+  sitterId       String
+  start          DateTime
+  end            DateTime
+  status         String
+  parentName     String
+}
+
+model User {
+  id       String  @id
+  name     String
+  email    String  @unique
+  role     String
+  approved Boolean
+}
+
+model Session {
+  token     String   @id
+  userId    String
+  name      String
+  email     String
+  createdAt DateTime
+  expiresAt DateTime
+
+  @@index([email])
+}

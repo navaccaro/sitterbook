@@ -1,14 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { availabilityBlocks, bookings } from "@/lib/mock-data";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import type { AvailabilityBlock, Booking } from "@/lib/mock-data";
 import { canBookBlock } from "@/lib/scheduler";
+import { googleCalendarUrl } from "@/lib/calendar";
 
 type CandidateTimes = {
   start: string;
   end: string;
 };
+
+type FamilyProfile = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+function normaliseEmail(email: string) {
+  return email.trim().toLowerCase();
+}
 
 function defaultCandidateTimes(block: AvailabilityBlock): CandidateTimes {
   const startHour = Number(block.start.slice(11, 13));
@@ -21,50 +32,183 @@ function defaultCandidateTimes(block: AvailabilityBlock): CandidateTimes {
 }
 
 export default function ParentsPage() {
-  const openBlocks = availabilityBlocks.filter((block) => block.status !== "booked");
-  const [currentBookings, setCurrentBookings] = useState(bookings);
-  const [candidateTimes, setCandidateTimes] = useState<Record<string, CandidateTimes>>(() =>
-    Object.fromEntries(openBlocks.map((block) => [block.id, defaultCandidateTimes(block)])),
-  );
+  const [availability, setAvailability] = useState<AvailabilityBlock[]>([]);
+  const [currentBookings, setCurrentBookings] = useState<Booking[]>([]);
+  const [candidateTimes, setCandidateTimes] = useState<Record<string, CandidateTimes>>({});
   const [message, setMessage] = useState<string | null>(null);
+  const [isApproved, setIsApproved] = useState<boolean | null>(null);
+  const [familyProfile, setFamilyProfile] = useState<FamilyProfile | null>(null);
 
-  function reserveBlock(block: AvailabilityBlock) {
+  useEffect(() => {
+    async function load() {
+      try {
+        const sessionResponse = await fetch("/api/session");
+
+        if (!sessionResponse.ok) {
+          setIsApproved(false);
+          return;
+        }
+
+        const sessionData = (await sessionResponse.json()) as {
+          session: { userId: string; name: string; email: string };
+          status: string;
+        };
+        const storedFamily: FamilyProfile = {
+          id: sessionData.session.userId,
+          name: sessionData.session.name,
+          email: sessionData.session.email,
+        };
+        const requests = (await fetch("/api/registrations").then((response) =>
+          response.json() as Promise<Array<{ email: string; status: string }>>
+        ));
+        const currentRequest =
+          requests.find((request) => normaliseEmail(request.email) === normaliseEmail(storedFamily.email)) ?? {
+            email: storedFamily.email,
+            status: "pending",
+          };
+
+        if (currentRequest.status !== "approved") {
+          setIsApproved(false);
+          return;
+        }
+
+        setFamilyProfile(storedFamily);
+        setIsApproved(true);
+        const [nextAvailability, nextBookings] = await Promise.all([
+          fetch("/api/availability").then((response) => response.json() as Promise<AvailabilityBlock[]>),
+          fetch("/api/bookings").then((response) => response.json() as Promise<Booking[]>),
+        ]);
+
+        setAvailability(nextAvailability);
+        setCurrentBookings(nextBookings);
+        setCandidateTimes(
+          Object.fromEntries(
+            nextAvailability.map((block) => [block.id, defaultCandidateTimes(block)]),
+          ),
+        );
+      } catch {
+        setIsApproved(false);
+      }
+    }
+
+    void load();
+  }, []);
+
+  if (isApproved === null) {
+    return (
+      <main className="mx-auto max-w-4xl px-6 py-16 text-center">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Parents</p>
+        <h1 className="mt-3 text-3xl font-bold text-slate-900">Checking family access…</h1>
+      </main>
+    );
+  }
+
+  if (!isApproved) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
+        <div className="w-full rounded-[2rem] border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Access required</p>
+          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-900">Family approval is still pending.</h1>
+          <p className="mt-4 text-lg text-slate-600">Your request must be approved before you can browse sitter windows and reserve time.</p>
+          <Link href="/auth" className="mt-8 inline-flex rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700">Go to sign-in</Link>
+        </div>
+      </main>
+    );
+  }
+
+  function handleSignOut() {
+    void fetch("/api/session", { method: "DELETE" });
+    setFamilyProfile(null);
+    setIsApproved(false);
+  }
+
+  const openBlocks = availability.filter((block) => block.status !== "booked");
+
+  async function reserveBlock(block: AvailabilityBlock) {
+    if (!familyProfile) {
+      setMessage("Please sign in again before reserving a block.");
+      return;
+    }
+
     const times = candidateTimes[block.id];
     const candidateStart = `${block.start.slice(0, 10)}T${times.start}:00`;
     const candidateEnd = `${block.start.slice(0, 10)}T${times.end}:00`;
 
-    if (new Date(candidateEnd) <= new Date(candidateStart) || !canBookBlock(block, candidateStart, candidateEnd, currentBookings)) {
+    if (!canBookBlock(block, candidateStart, candidateEnd, currentBookings)) {
       setMessage(`${block.label} is no longer available for that time.`);
       return;
     }
 
-    const nextBooking: Booking = {
-      id: `booking-${block.id}-${currentBookings.length}`,
-      availabilityId: block.id,
-      parentId: "parent-1",
-      sitterId: block.sitterId,
-      start: candidateStart,
-      end: candidateEnd,
-      status: "confirmed",
-      parentName: "The Smiths",
-    };
+    const response = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        blockId: block.id,
+        parentId: familyProfile.id,
+        parentName: familyProfile.name,
+        parentEmail: familyProfile.email,
+        start: candidateStart,
+        end: candidateEnd,
+      }),
+    });
 
+    if (!response.ok) {
+      setMessage(`${block.label} is no longer available for that time.`);
+      return;
+    }
+
+    const nextBooking = (await response.json()) as Booking;
     setCurrentBookings((current) => [...current, nextBooking]);
     setMessage(`Reserved ${times.start} – ${times.end} on ${block.label}.`);
   }
 
-  function releaseReservation(bookingId: string) {
+  async function releaseReservation(bookingId: string) {
+    if (!familyProfile) {
+      return;
+    }
+
+    const response = await fetch("/api/bookings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: bookingId,
+        parentId: familyProfile.id,
+        parentEmail: familyProfile.email,
+      }),
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
     setCurrentBookings((current) => current.filter((booking) => booking.id !== bookingId));
     setMessage("Reservation released. That time is available again.");
   }
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
-      <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Parents</p>
-        <h1 className="mt-2 text-3xl font-bold text-slate-900">Available babysitting windows</h1>
-        {message && <p role="status" className="mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{message}</p>}
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Parents</p>
+          <h1 className="mt-2 text-3xl font-bold text-slate-900">Available babysitting windows</h1>
+        </div>
+        <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Family</p>
+            <p className="text-sm font-semibold text-slate-900">{familyProfile?.name ?? "Your family"}</p>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
+
+      {message && (
+        <p role="status" className="mb-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{message}</p>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {openBlocks.map((block) => {
@@ -75,7 +219,7 @@ export default function ParentsPage() {
           const ownReservation = currentBookings.find(
             (booking) =>
               booking.availabilityId === block.id &&
-              booking.parentId === "parent-1",
+              familyProfile && booking.parentId === familyProfile.id,
           );
 
           return (
@@ -133,12 +277,22 @@ export default function ParentsPage() {
               </div>
 
               {ownReservation ? (
-                <button
-                  onClick={() => releaseReservation(ownReservation.id)}
-                  className="mt-5 w-full rounded-full border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
-                >
-                  Release your reservation
-                </button>
+                <div className="mt-5 space-y-2">
+                  <button
+                    onClick={() => releaseReservation(ownReservation.id)}
+                    className="w-full rounded-full border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                  >
+                    Release your reservation
+                  </button>
+                  <a
+                    href={googleCalendarUrl(`SitterBook: ${ownReservation.parentName}`, ownReservation.start, ownReservation.end, `Confirmed booking with ${block.label}`)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block w-full rounded-full border border-emerald-200 px-4 py-2 text-center text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                  >
+                    Add to Google Calendar
+                  </a>
+                </div>
               ) : (
                 <button
                   onClick={() => reserveBlock(block)}

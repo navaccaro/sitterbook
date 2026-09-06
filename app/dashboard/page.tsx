@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { availabilityBlocks, bookings, getUserById, type AvailabilityBlock } from "@/lib/mock-data";
+import { useEffect, useState } from "react";
+import { getUserById, type AvailabilityBlock, type Booking } from "@/lib/mock-data";
+import { getBlockDurationHours } from "@/lib/scheduler";
+import { googleCalendarUrl } from "@/lib/calendar";
 
 const sitterId = "charlotte";
-const initialBlocks = availabilityBlocks.filter((block) => block.sitterId === sitterId);
 
 type Draft = {
   label: string;
@@ -35,6 +36,10 @@ function formatTime(value: string) {
   });
 }
 
+function dateKey(year: number, month: number, day: number) {
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 function blockToDraft(block: AvailabilityBlock): Draft {
   const start = new Date(block.start);
   const end = new Date(block.end);
@@ -48,17 +53,41 @@ function blockToDraft(block: AvailabilityBlock): Draft {
 }
 
 export default function DashboardPage() {
-  const [blocks, setBlocks] = useState(initialBlocks);
+  const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sharedId, setSharedId] = useState<string | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+
+  useEffect(() => {
+    async function load() {
+      const [nextBlocks, nextBookings] = await Promise.all([
+        fetch("/api/availability").then((response) => response.json() as Promise<AvailabilityBlock[]>),
+        fetch("/api/bookings").then((response) => response.json() as Promise<Booking[]>),
+      ]);
+
+      setBlocks(nextBlocks.filter((block) => block.sitterId === sitterId));
+      setBookings(nextBookings);
+
+      const firstBlock = nextBlocks
+        .filter((block) => block.sitterId === sitterId)
+        .sort((a, b) => a.start.localeCompare(b.start))[0];
+
+      if (firstBlock) {
+        setCalendarMonth(new Date(`${firstBlock.start.slice(0, 7)}-01T00:00:00`));
+      }
+    }
+
+    void load();
+  }, []);
 
   const sitterBookings = bookings.filter((booking) => booking.sitterId === sitterId);
   const bookedHours = sitterBookings.reduce((total, booking) => {
     return total + (new Date(booking.end).getTime() - new Date(booking.start).getTime()) / 3600000;
   }, 0);
   const openHours = blocks.reduce((total, block) => {
-    return total + (new Date(block.end).getTime() - new Date(block.start).getTime()) / 3600000;
+    return total + getBlockDurationHours(block);
   }, 0);
 
   function startNewBlock() {
@@ -73,7 +102,7 @@ export default function DashboardPage() {
     document.getElementById("availability-form")?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  function saveBlock(event: React.FormEvent<HTMLFormElement>) {
+  async function saveBlock(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const start = `${draft.date}T${draft.startTime}:00`;
     const end = `${draft.date}T${draft.endTime}:00`;
@@ -82,32 +111,48 @@ export default function DashboardPage() {
       return;
     }
 
-    if (editingId) {
-      setBlocks((current) =>
-        current.map((block) =>
-          block.id === editingId ? { ...block, label: draft.label.trim(), start, end } : block,
-        ),
-      );
-    } else {
-      setBlocks((current) => [
-        ...current,
-        {
-          id: `block-${Date.now()}`,
-          sitterId,
-          start,
-          end,
-          status: "open",
-          label: draft.label.trim(),
-        },
-      ]);
+    const nextBlock = {
+      id: editingId ?? `block-${Date.now()}`,
+      sitterId,
+      start,
+      end,
+      status: "open" as const,
+      label: draft.label.trim(),
+    };
+
+    const response = await fetch("/api/availability", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(nextBlock),
+    });
+
+    if (!response.ok) {
+      return;
     }
+
+    const saved = (await response.json()) as AvailabilityBlock;
+    setBlocks((current) => {
+      if (editingId) {
+        return current.map((block) => (block.id === editingId ? saved : block));
+      }
+
+      return [...current, saved];
+    });
 
     setEditingId(null);
     setDraft(emptyDraft);
   }
 
-  function removeBlock(blockId: string) {
+  async function removeBlock(blockId: string) {
     if (sitterBookings.some((booking) => booking.availabilityId === blockId)) {
+      return;
+    }
+
+    const response = await fetch(`/api/availability?id=${encodeURIComponent(blockId)}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
       return;
     }
 
@@ -160,29 +205,61 @@ export default function DashboardPage() {
         </section>
 
         <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Week of September 7</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Monthly view</p>
               <h2 className="mt-1 text-xl font-bold text-slate-900">Your availability at a glance</h2>
+              <p className="mt-1 text-sm text-slate-500">See this month and step forward to plan next month.</p>
             </div>
-            <span className="hidden rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 sm:inline-flex">Accepting bookings</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+                className="rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+              >
+                Previous
+              </button>
+              <p className="min-w-32 text-center text-sm font-bold text-slate-900">
+                {calendarMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+              </p>
+              <button
+                type="button"
+                onClick={() => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+                className="rounded-full bg-violet-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-violet-500"
+              >
+                Next month
+              </button>
+            </div>
           </div>
-          <div className="mt-6 grid grid-cols-7 gap-2 overflow-x-auto pb-1">
-            {Array.from({ length: 7 }, (_, index) => {
-              const date = new Date(2026, 8, 7 + index);
-              const dateValue = date.toISOString().slice(0, 10);
+          <div className="mt-6 grid grid-cols-7 gap-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            {(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const).map((day) => <span key={day}>{day}</span>)}
+          </div>
+          <div className="mt-2 grid grid-cols-7 gap-2">
+            {Array.from({ length: new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate() + calendarMonth.getDay() }, (_, index) => {
+              if (index < calendarMonth.getDay()) {
+                return <div key={`empty-${index}`} className="min-h-24 rounded-2xl bg-slate-50/50" />;
+              }
+
+              const day = index - calendarMonth.getDay() + 1;
+              const dateValue = dateKey(calendarMonth.getFullYear(), calendarMonth.getMonth(), day);
               const dayBlocks = blocks.filter((block) => block.start.slice(0, 10) === dateValue);
 
               return (
-                <div key={dateValue} className="min-w-[74px] rounded-2xl bg-slate-50 p-3 text-center">
-                  <p className="text-xs font-semibold uppercase text-slate-400">{date.toLocaleDateString("en-US", { weekday: "short" })}</p>
-                  <p className="mt-1 text-lg font-bold text-slate-900">{date.getDate()}</p>
-                  <div className="mt-3 space-y-1.5">
+                <div key={dateValue} className="min-h-24 rounded-2xl bg-slate-50 p-2 text-left">
+                  <p className="text-sm font-bold text-slate-900">{day}</p>
+                  <div className="mt-2 space-y-1">
                     {dayBlocks.length > 0 ? dayBlocks.map((block) => (
-                      <div key={block.id} className="rounded-lg bg-violet-600 px-1 py-1.5 text-[10px] font-semibold text-white">
+                      <a
+                        key={block.id}
+                        href={googleCalendarUrl(block.label, block.start, block.end, "SitterBook availability window")}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block truncate rounded-lg bg-violet-600 px-1.5 py-1 text-[10px] font-semibold text-white transition hover:bg-violet-500"
+                        title="Add to Google Calendar"
+                      >
                         {formatTime(block.start)}
-                      </div>
-                    )) : <div className="py-2 text-xs text-slate-300">—</div>}
+                      </a>
+                    )) : <p className="text-xs text-slate-300">Open</p>}
                   </div>
                 </div>
               );
@@ -224,6 +301,14 @@ export default function DashboardPage() {
                     <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
                       <button onClick={() => startEditing(block)} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">Edit window</button>
                       <button onClick={() => shareBlock(block.id)} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-700">{sharedId === block.id ? "Link copied" : "Share with families"}</button>
+                      <a
+                        href={googleCalendarUrl(block.label, block.start, block.end, "SitterBook availability window")}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-emerald-200 px-4 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                      >
+                        Add to Google Calendar
+                      </a>
                       <button onClick={() => removeBlock(block.id)} disabled={blockBookings.length > 0} className="rounded-full px-4 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:text-slate-300">Remove</button>
                     </div>
                   </article>
@@ -280,6 +365,14 @@ export default function DashboardPage() {
                       <span className="rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-semibold text-emerald-700">{booking.status}</span>
                     </div>
                     <p className="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-500">{getUserById(booking.parentId)?.email ?? "family@example.com"}</p>
+                    <a
+                      href={googleCalendarUrl(`SitterBook: ${booking.parentName}`, booking.start, booking.end, "Confirmed SitterBook booking")}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex rounded-full border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                    >
+                      Add booking to Google Calendar
+                    </a>
                   </div>
                 ))}
               </div>

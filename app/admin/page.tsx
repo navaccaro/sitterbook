@@ -1,63 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
-import { availabilityBlocks, bookings } from "@/lib/mock-data";
-import {
-  demoRegistrationRequests,
-  registrationStorageKey,
-  type RegistrationRequest,
-} from "@/lib/registration";
+import { useEffect, useState } from "react";
+import type { AvailabilityBlock, Booking } from "@/lib/mock-data";
+import type { RegistrationRequest } from "@/lib/registration";
 
-const registrationEvent = "sitterbook:registrations";
-let cachedStorageValue: string | null = null;
-let cachedRequests = demoRegistrationRequests;
-
-function readRequests() {
-  const stored = window.localStorage.getItem(registrationStorageKey);
-
-  if (!stored) {
-    return demoRegistrationRequests;
-  }
-
-  if (stored === cachedStorageValue) {
-    return cachedRequests;
-  }
-
-  try {
-    cachedStorageValue = stored;
-    cachedRequests = JSON.parse(stored) as RegistrationRequest[];
-    return cachedRequests;
-  } catch {
-    return demoRegistrationRequests;
-  }
-}
-
-function saveRequests(requests: RegistrationRequest[]) {
-  window.localStorage.setItem(registrationStorageKey, JSON.stringify(requests));
-  window.dispatchEvent(new Event(registrationEvent));
-}
-
-function subscribeToRequests(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(registrationEvent, onChange);
-
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(registrationEvent, onChange);
-  };
+function readJson<T>(url: string): Promise<T> {
+  return fetch(url).then((response) => response.json() as Promise<T>);
 }
 
 export default function AdminPage() {
-  const requests = useSyncExternalStore(subscribeToRequests, readRequests, () => demoRegistrationRequests);
+  const [requests, setRequests] = useState<RegistrationRequest[]>([]);
+  const [availability, setAvailability] = useState<AvailabilityBlock[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+
+  useEffect(() => {
+    async function load() {
+      const [nextRequests, nextAvailability, nextBookings] = await Promise.all([
+        readJson<RegistrationRequest[]>("/api/registrations"),
+        readJson<AvailabilityBlock[]>("/api/availability"),
+        readJson<Booking[]>("/api/bookings"),
+      ]);
+
+      setRequests(nextRequests);
+      setAvailability(nextAvailability);
+      setBookings(nextBookings);
+    }
+
+    void load();
+  }, []);
+
   const pendingRequests = requests.filter((request) => request.status === "pending");
-  const sitterBlocks = availabilityBlocks.map((block) => ({
+  const sitterBlocks = availability.map((block) => ({
     ...block,
     bookedCount: bookings.filter((booking) => booking.availabilityId === block.id).length,
   }));
 
-  function updateRequest(requestId: string, status: "approved" | "rejected") {
-    saveRequests(requests.map((request) => (request.id === requestId ? { ...request, status } : request)));
+  async function updateRequest(requestId: string, status: "approved" | "rejected") {
+    const response = await fetch("/api/registrations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: requestId, status }),
+    });
+
+    if (response.ok) {
+      const nextRequests = await readJson<RegistrationRequest[]>("/api/registrations");
+      setRequests(nextRequests);
+    }
   }
 
   return (

@@ -3,35 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  demoRegistrationRequests,
-  registrationStorageKey,
-  type RegistrationRequest,
-} from "@/lib/registration";
+import type { RegistrationRequest } from "@/lib/registration";
 
 type Profile = {
   name: string;
   email: string;
 };
 
-const authStorageKey = "sitterbook.authenticatedFamily";
+async function fetchRegistrationByEmail(email: string) {
+  const requests = await fetch("/api/registrations").then((response) =>
+    response.json() as Promise<RegistrationRequest[]>,
+  );
 
-function readRequests() {
-  const stored = window.localStorage.getItem(registrationStorageKey);
-
-  if (!stored) {
-    return demoRegistrationRequests;
-  }
-
-  try {
-    return JSON.parse(stored) as RegistrationRequest[];
-  } catch {
-    return demoRegistrationRequests;
-  }
-}
-
-function saveRequests(requests: RegistrationRequest[]) {
-  window.localStorage.setItem(registrationStorageKey, JSON.stringify(requests));
+  return requests.find((item) => item.email.toLowerCase() === email.toLowerCase()) ?? null;
 }
 
 export default function AuthPage() {
@@ -41,42 +25,42 @@ export default function AuthPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    function restoreSession() {
-      const storedSession = window.localStorage.getItem(authStorageKey);
+    async function restoreSession() {
+      const response = await fetch("/api/session");
 
-      if (!storedSession) {
+      if (!response.ok) {
         return;
       }
 
-      try {
-        const session = JSON.parse(storedSession) as RegistrationRequest;
-        const currentRequest = readRequests().find((item) => item.email === session.email) ?? session;
+      const data = (await response.json()) as { session: Profile; status: string };
+      const currentRequest = await fetchRegistrationByEmail(data.session.email);
 
-        if (currentRequest.status === "approved") {
-          router.replace("/parents");
-          return;
-        }
-
-        setProfile({ name: currentRequest.name, email: currentRequest.email });
-        setRequest(currentRequest);
-      } catch {
-        window.localStorage.removeItem(authStorageKey);
+      if (data.status === "approved") {
+        router.replace("/parents");
+        return;
       }
+
+      setProfile(data.session);
+      setRequest(currentRequest);
     }
 
-    restoreSession();
-    window.addEventListener("storage", restoreSession);
-
-    return () => window.removeEventListener("storage", restoreSession);
+    void restoreSession();
   }, [router]);
 
-  function continueWithGoogle() {
+  async function continueWithGoogle() {
     const nextProfile = { name: "The New Family", email: "new.family@example.com" };
-    const existing = readRequests().find((item) => item.email === nextProfile.email);
+    const existing = await fetchRegistrationByEmail(nextProfile.email);
 
     if (existing?.status === "approved") {
-      window.localStorage.setItem(authStorageKey, JSON.stringify(existing));
-      router.replace("/parents");
+      const response = await fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nextProfile),
+      });
+
+      if (response.ok) {
+        router.replace("/parents");
+      }
       return;
     }
 
@@ -84,7 +68,7 @@ export default function AuthPage() {
     setRequest(existing ?? null);
   }
 
-  function submitRegistration(event: React.FormEvent<HTMLFormElement>) {
+  async function submitRegistration(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!profile) {
@@ -92,30 +76,35 @@ export default function AuthPage() {
     }
 
     setIsSubmitting(true);
-    const existing = readRequests().find((item) => item.email === profile.email);
+    const existing = await fetchRegistrationByEmail(profile.email);
 
     if (existing?.status === "approved") {
-      window.localStorage.setItem(authStorageKey, JSON.stringify(existing));
       setRequest(existing);
-      router.replace("/parents");
+      const response = await fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
+
+      if (response.ok) {
+        router.replace("/parents");
+      }
       setIsSubmitting(false);
       return;
     }
 
-    const nextRequest: RegistrationRequest = existing ?? {
-      id: `request-${Date.now()}`,
-      name: profile.name,
-      email: profile.email,
-      provider: "google",
-      status: "pending",
-      requestedAt: new Date().toISOString(),
-    };
-    const nextRequests = existing
-      ? readRequests().map((item) => (item.id === existing.id ? { ...item, name: profile.name, status: "pending" as const } : item))
-      : [...readRequests(), nextRequest];
+    const response = await fetch("/api/registrations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: profile.name, email: profile.email, provider: "google" }),
+    });
 
-    saveRequests(nextRequests);
-    window.localStorage.setItem(authStorageKey, JSON.stringify(nextRequest));
+    const nextRequest = (await response.json()) as RegistrationRequest;
+    await fetch("/api/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profile),
+    });
     setRequest(nextRequest);
     setIsSubmitting(false);
   }
