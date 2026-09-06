@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { AvailabilityBlock, Booking } from "@/lib/mock-data";
+import { useEffect, useState, type FormEvent } from "react";
+import type { AvailabilityBlock, Booking, User } from "@/lib/mock-data";
 import type { RegistrationRequest } from "@/lib/registration";
 
 function readJson<T>(url: string): Promise<T> {
@@ -14,7 +14,15 @@ export default function AdminPage() {
   const [requests, setRequests] = useState<RegistrationRequest[]>([]);
   const [availability, setAvailability] = useState<AvailabilityBlock[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [sitters, setSitters] = useState<User[]>([]);
   const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied">("checking");
+  const [sitterName, setSitterName] = useState("");
+  const [sitterEmail, setSitterEmail] = useState("");
+  const [sitterFormError, setSitterFormError] = useState<string | null>(null);
+
+  async function reloadSitters() {
+    setSitters(await readJson<User[]>("/api/sitters"));
+  }
 
   useEffect(() => {
     async function load() {
@@ -28,15 +36,17 @@ export default function AdminPage() {
         return;
       }
 
-      const [nextRequests, nextAvailability, nextBookings] = await Promise.all([
+      const [nextRequests, nextAvailability, nextBookings, nextSitters] = await Promise.all([
         readJson<RegistrationRequest[]>("/api/registrations"),
         readJson<AvailabilityBlock[]>("/api/availability"),
         readJson<Booking[]>("/api/bookings"),
+        readJson<User[]>("/api/sitters"),
       ]);
 
       setRequests(nextRequests);
       setAvailability(nextAvailability);
       setBookings(nextBookings);
+      setSitters(nextSitters);
       setAccessState("allowed");
     }
 
@@ -89,6 +99,39 @@ export default function AdminPage() {
     if (response.ok) {
       const nextRequests = await readJson<RegistrationRequest[]>("/api/registrations");
       setRequests(nextRequests);
+    }
+  }
+
+  async function addSitter(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSitterFormError(null);
+
+    const response = await fetch("/api/sitters", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: sitterName, email: sitterEmail }),
+    });
+
+    if (!response.ok) {
+      const body = (await response.json()) as { error?: string };
+      setSitterFormError(body.error ?? "Unable to add sitter.");
+      return;
+    }
+
+    setSitterName("");
+    setSitterEmail("");
+    await reloadSitters();
+  }
+
+  async function toggleSitterApproved(sitterId: string, approved: boolean) {
+    const response = await fetch("/api/sitters", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: sitterId, approved }),
+    });
+
+    if (response.ok) {
+      await reloadSitters();
     }
   }
 
@@ -185,6 +228,63 @@ export default function AdminPage() {
             </div>
           </section>
         </div>
+
+        <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Team</p>
+          <h2 className="mt-1 text-xl font-bold text-slate-900">Manage sitters</h2>
+
+          <form onSubmit={addSitter} className="mt-5 flex flex-col gap-3 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <label className="text-xs font-semibold text-slate-500" htmlFor="sitter-name">Name</label>
+              <input
+                id="sitter-name"
+                value={sitterName}
+                onChange={(event) => setSitterName(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Sitter name"
+                required
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs font-semibold text-slate-500" htmlFor="sitter-email">Email</label>
+              <input
+                id="sitter-email"
+                type="email"
+                value={sitterEmail}
+                onChange={(event) => setSitterEmail(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="sitter@example.com"
+                required
+              />
+            </div>
+            <button type="submit" className="rounded-full bg-[#1a2d2a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#304039]">Add sitter</button>
+          </form>
+          {sitterFormError && <p className="mt-2 text-sm text-rose-600">{sitterFormError}</p>}
+
+          <div className="mt-5 space-y-3">
+            {sitters.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500">No sitters yet. Add one above.</div>
+            ) : sitters.map((sitter) => (
+              <div key={sitter.id} className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 p-4 sm:flex-row sm:items-center">
+                <div>
+                  <p className="font-semibold text-slate-900">{sitter.name}</p>
+                  <p className="text-sm text-slate-500">{sitter.email}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={sitter.approved ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700" : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500"}>
+                    {sitter.approved ? "Active" : "Deactivated"}
+                  </span>
+                  <button
+                    onClick={() => toggleSitterApproved(sitter.id, !sitter.approved)}
+                    className="rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-[#1a2d2a]/30 hover:bg-[#f7f4f1]"
+                  >
+                    {sitter.approved ? "Deactivate" : "Reactivate"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {requests.some((request) => request.status !== "pending") && (
           <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

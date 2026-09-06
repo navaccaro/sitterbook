@@ -186,6 +186,45 @@ export async function getUserById(userId: string): Promise<User | null> {
   return user ? toUser(user) : null;
 }
 
+export async function getSitters(): Promise<User[]> {
+  await ensureSeeded();
+  const sitters = await prisma.user.findMany({ where: { role: "sitter" }, orderBy: { name: "asc" } });
+  return sitters.map(toUser);
+}
+
+export async function createSitter(profile: { name: string; email: string }): Promise<User> {
+  await ensureSeeded();
+  const email = normaliseEmail(profile.email);
+  const existing = await prisma.user.findUnique({ where: { email } });
+
+  if (existing) {
+    throw new Error("A user with that email already exists.");
+  }
+
+  const created = await prisma.user.create({
+    data: {
+      id: `sitter-${email.replace(/[^a-z0-9]+/g, "-")}`,
+      name: profile.name.trim(),
+      email,
+      role: "sitter",
+      approved: true,
+    },
+  });
+  return toUser(created);
+}
+
+export async function setSitterApproved(userId: string, approved: boolean): Promise<User | null> {
+  await ensureSeeded();
+  const existing = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!existing || existing.role !== "sitter") {
+    return null;
+  }
+
+  const updated = await prisma.user.update({ where: { id: userId }, data: { approved } });
+  return toUser(updated);
+}
+
 export async function upsertGoogleUser(profile: { name: string; email: string }) {
   await ensureSeeded();
   const email = normaliseEmail(profile.email);
