@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const features = [
   {
     title: "Create availability blocks",
@@ -41,9 +43,9 @@ export default function Home() {
             </div>
           </div>
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 sm:flex">
-            <span>Availability</span>
-            <span>Bookings</span>
-            <span>Calendar</span>
+            <Link href="/dashboard" className="transition hover:text-violet-600">Availability</Link>
+            <Link href="/parents" className="transition hover:text-violet-600">Bookings</Link>
+            <Link href="/dashboard" className="transition hover:text-violet-600">Calendar</Link>
           </nav>
           <button className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-700">
             Join waitlist
@@ -62,12 +64,12 @@ export default function Home() {
               SitterBook helps sitters publish open time blocks and lets approved families reserve the exact windows they need, with clear calendars and easy confirmations.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <button className="rounded-full bg-violet-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-500">
+              <Link href="/dashboard" className="rounded-full bg-violet-600 px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-500">
                 Create availability
-              </button>
-              <button className="rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50">
+              </Link>
+              <Link href="/parents" className="rounded-full border border-slate-200 bg-white px-6 py-3 text-center text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50">
                 Explore bookings
-              </button>
+              </Link>
             </div>
             <div className="mt-8 flex items-center gap-6 text-sm text-slate-500">
               <span>Google OAuth</span>
