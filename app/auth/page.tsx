@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   demoRegistrationRequests,
   registrationStorageKey,
@@ -12,6 +13,8 @@ type Profile = {
   name: string;
   email: string;
 };
+
+const authStorageKey = "sitterbook.authenticatedFamily";
 
 function readRequests() {
   const stored = window.localStorage.getItem(registrationStorageKey);
@@ -32,12 +35,53 @@ function saveRequests(requests: RegistrationRequest[]) {
 }
 
 export default function AuthPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [request, setRequest] = useState<RegistrationRequest | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    function restoreSession() {
+      const storedSession = window.localStorage.getItem(authStorageKey);
+
+      if (!storedSession) {
+        return;
+      }
+
+      try {
+        const session = JSON.parse(storedSession) as RegistrationRequest;
+        const currentRequest = readRequests().find((item) => item.email === session.email) ?? session;
+
+        if (currentRequest.status === "approved") {
+          router.replace("/parents");
+          return;
+        }
+
+        setProfile({ name: currentRequest.name, email: currentRequest.email });
+        setRequest(currentRequest);
+      } catch {
+        window.localStorage.removeItem(authStorageKey);
+      }
+    }
+
+    restoreSession();
+    window.addEventListener("storage", restoreSession);
+
+    return () => window.removeEventListener("storage", restoreSession);
+  }, [router]);
+
   function continueWithGoogle() {
-    setProfile({ name: "The New Family", email: "new.family@example.com" });
+    const nextProfile = { name: "The New Family", email: "new.family@example.com" };
+    const existing = readRequests().find((item) => item.email === nextProfile.email);
+
+    if (existing?.status === "approved") {
+      window.localStorage.setItem(authStorageKey, JSON.stringify(existing));
+      router.replace("/parents");
+      return;
+    }
+
+    setProfile(nextProfile);
+    setRequest(existing ?? null);
   }
 
   function submitRegistration(event: React.FormEvent<HTMLFormElement>) {
@@ -49,6 +93,15 @@ export default function AuthPage() {
 
     setIsSubmitting(true);
     const existing = readRequests().find((item) => item.email === profile.email);
+
+    if (existing?.status === "approved") {
+      window.localStorage.setItem(authStorageKey, JSON.stringify(existing));
+      setRequest(existing);
+      router.replace("/parents");
+      setIsSubmitting(false);
+      return;
+    }
+
     const nextRequest: RegistrationRequest = existing ?? {
       id: `request-${Date.now()}`,
       name: profile.name,
@@ -62,6 +115,7 @@ export default function AuthPage() {
       : [...readRequests(), nextRequest];
 
     saveRequests(nextRequests);
+    window.localStorage.setItem(authStorageKey, JSON.stringify(nextRequest));
     setRequest(nextRequest);
     setIsSubmitting(false);
   }

@@ -1,130 +1,129 @@
 import Link from "next/link";
 
-const features = [
+const steps = [
   {
-    title: "Create availability blocks",
-    description:
-      "Sitters can post open time windows for evenings, weekends, and school breaks in a few clicks.",
+    number: "01",
+    title: "Join your circle",
+    description: "Sign in with Google and request access to your family’s private sitter network.",
   },
   {
-    title: "Approve family access",
-    description:
-      "Parents join with Google sign-in, then wait for a trusted approval before they can book.",
+    number: "02",
+    title: "Choose a window",
+    description: "See exactly who is available, when they can help, and how much time you need.",
   },
   {
-    title: "Book and reserve time",
-    description:
-      "Families reserve a sub-block inside a sitter's open window, without overlapping anyone else's booking.",
-  },
-  {
-    title: "Calendar-ready confirmation",
-    description:
-      "Bookings can trigger calendar invites so everyone sees the finalized plan in one place.",
+    number: "03",
+    title: "Know it’s handled",
+    description: "Get a clear confirmation and keep the plan handy on everyone’s calendar.",
   },
 ];
 
-const schedule = [
-  { label: "Friday", time: "4:00 PM - 12:00 AM", person: "Charlotte" },
-  { label: "Saturday", time: "2:00 PM - 8:00 PM", person: "Emma" },
-  { label: "Sunday", time: "6:00 PM - 9:30 PM", person: "Charlotte" },
+const upcomingWindows = [
+  { day: "Fri", date: "11", time: "4:00 – 11:00 PM", sitter: "Charlotte", tone: "bg-coral" },
+  { day: "Sat", date: "12", time: "1:00 – 4:00 PM", sitter: "Charlotte", tone: "bg-yellow" },
+  { day: "Sun", date: "13", time: "6:00 – 10:00 PM", sitter: "Emma", tone: "bg-mint" },
 ];
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#f8f5ff,_#f4f7ff_42%,_#eef2ff_100%)] text-slate-900">
-      <div className="mx-auto max-w-6xl px-6 py-8 sm:px-8 lg:px-10">
-        <header className="flex items-center justify-between rounded-full border border-slate-200/80 bg-white/80 px-5 py-3 shadow-sm backdrop-blur-sm">
+    <main className="min-h-screen overflow-hidden bg-[#fbfaf7] text-[#18231f]">
+      <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8 lg:px-12">
+        <header className="flex items-center justify-between border-b border-[#18231f]/15 pb-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
-              SB
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e86e52] text-sm font-black text-[#18231f]">
+              <span>SB</span>
             </div>
             <div>
-              <p className="text-lg font-semibold tracking-tight">SitterBook</p>
+              <p className="text-xl font-black tracking-[-0.04em]">SitterBook</p>
             </div>
           </div>
-          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 sm:flex">
-            <Link href="/dashboard" className="transition hover:text-violet-600">Availability</Link>
-            <Link href="/parents" className="transition hover:text-violet-600">Bookings</Link>
-            <Link href="/dashboard" className="transition hover:text-violet-600">Calendar</Link>
+          <nav className="hidden items-center gap-8 text-sm font-semibold text-[#53605a] sm:flex">
+            <Link href="#how-it-works" className="transition hover:text-[#e86e52]">How it works</Link>
+            <Link href="/parents" className="transition hover:text-[#e86e52]">Browse availability</Link>
           </nav>
-          <Link href="/auth" className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-700">
-            Sign in
+          <Link href="/auth" className="rounded-full bg-[#18231f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#304039]">
+            Get started <span aria-hidden="true">↗</span>
           </Link>
         </header>
 
-        <section className="grid items-center gap-10 pb-16 pt-16 lg:grid-cols-[1.1fr_0.9fr] lg:pt-20">
-          <div>
-            <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-violet-700">
-              Family scheduling made easy
+        <section className="grid items-center gap-14 pb-20 pt-16 lg:grid-cols-[1fr_0.9fr] lg:gap-20 lg:pb-28 lg:pt-24">
+          <div className="relative z-10">
+            <span className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#e86e52]">
+              <span className="h-2 w-2 rounded-full bg-[#e86e52]" />
+              Your family’s sitter circle
             </span>
-            <h1 className="mt-6 max-w-xl text-4xl font-black tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-              Book babysitting time without the chaos.
+            <h1 className="mt-6 max-w-2xl text-5xl font-black leading-[0.98] tracking-[-0.065em] text-[#18231f] sm:text-6xl lg:text-8xl">
+              More time for <span className="text-[#e86e52]">yourself.</span>
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
-              SitterBook helps sitters publish open time blocks and lets approved families reserve the exact windows they need, with clear calendars and easy confirmations.
+            <p className="mt-7 max-w-lg text-lg leading-8 text-[#53605a] sm:text-xl">
+              Find a trusted sitter, book the time that fits, and get back to the things that make your family yours.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/dashboard" className="rounded-full bg-violet-600 px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-500">
-                Create availability
+              <Link href="/auth" className="rounded-full bg-[#e86e52] px-6 py-3.5 text-center text-sm font-bold text-[#18231f] transition hover:bg-[#ef876d]">
+                Find a sitter <span aria-hidden="true">↗</span>
               </Link>
-              <Link href="/parents" className="rounded-full border border-slate-200 bg-white px-6 py-3 text-center text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50">
-                Explore bookings
+              <Link href="/parents" className="rounded-full border border-[#18231f]/20 px-6 py-3.5 text-center text-sm font-bold text-[#18231f] transition hover:bg-white">
+                See open times
               </Link>
             </div>
-            <div className="mt-8 flex items-center gap-6 text-sm text-slate-500">
-              <span>Google OAuth</span>
-              <span>•</span>
-              <span>Approval flow</span>
-              <span>•</span>
-              <span>Calendar invites</span>
+            <div className="mt-10 flex items-center gap-3 text-sm font-semibold text-[#53605a]">
+              <span className="flex -space-x-2" aria-hidden="true">
+                <span className="h-8 w-8 rounded-full border-2 border-[#fbfaf7] bg-[#f2bf69]" />
+                <span className="h-8 w-8 rounded-full border-2 border-[#fbfaf7] bg-[#91b6a3]" />
+                <span className="h-8 w-8 rounded-full border-2 border-[#fbfaf7] bg-[#d88f7a]" />
+              </span>
+              Made for the people who keep family life moving.
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-[0_24px_60px_rgba(15,23,42,0.10)]">
-            <div className="rounded-[1.5rem] bg-slate-50 p-4">
-              <div className="mb-4 flex items-center justify-between">
+          <div className="relative mx-auto w-full max-w-lg">
+            <div className="absolute -right-5 -top-8 h-28 w-28 rounded-full bg-[#f2bf69] opacity-70 blur-2xl" />
+            <div className="relative rounded-[2rem] border border-[#18231f]/15 bg-[#fffdf8] p-5 shadow-[12px_16px_0_#dce7dd] sm:p-7">
+              <div className="mb-7 flex items-start justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">This week</p>
-                  <h2 className="text-xl font-bold text-slate-900">Availability</h2>
+                  <p className="text-sm font-semibold text-[#7a847d]">September 2026</p>
+                  <h2 className="mt-1 text-2xl font-black tracking-[-0.04em]">Open this week</h2>
                 </div>
-                <div className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                  Open
-                </div>
+                <span className="rounded-full bg-[#dce7dd] px-3 py-1.5 text-xs font-bold text-[#47705a]">3 windows</span>
               </div>
 
               <div className="space-y-3">
-                {schedule.map((slot) => (
+                {upcomingWindows.map((slot) => (
                   <div
-                    key={slot.label}
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3"
+                    key={slot.day}
+                    className="flex items-center gap-4 rounded-2xl border border-[#18231f]/10 bg-white px-4 py-4"
                   >
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{slot.label}</p>
-                      <p className="text-sm text-slate-500">{slot.time}</p>
+                    <div className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl ${slot.tone}`}>
+                      <span className="text-[10px] font-bold uppercase">{slot.day}</span>
+                      <span className="text-lg font-black leading-4">{slot.date}</span>
                     </div>
-                    <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">
-                      {slot.person}
-                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold">{slot.time}</p>
+                      <p className="mt-1 text-sm text-[#7a847d]">with {slot.sitter}</p>
+                    </div>
+                    <span className="text-lg text-[#e86e52]" aria-hidden="true">→</span>
                   </div>
                 ))}
               </div>
+              <Link href="/parents" className="mt-5 block text-center text-sm font-bold text-[#e86e52] transition hover:text-[#b9513b]">View all availability <span aria-hidden="true">↗</span></Link>
             </div>
           </div>
         </section>
 
-        <section className="pb-20">
-          <div className="mb-8 max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">How it works</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">A cleaner way to manage babysitting.</h2>
+        <section id="how-it-works" className="border-t border-[#18231f]/15 py-16 lg:py-20">
+          <div className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.16em] text-[#e86e52]">Simple by design</p>
+              <h2 className="mt-3 max-w-xl text-3xl font-black tracking-[-0.05em] sm:text-4xl">A little less logistics. A lot more life.</h2>
+            </div>
+            <p className="max-w-xs text-sm leading-6 text-[#53605a]">A private, parent-first way to coordinate care with people you already trust.</p>
           </div>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {features.map((feature, index) => (
-              <div key={feature.title} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-100 text-sm font-bold text-violet-700">
-                  0{index + 1}
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900">{feature.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">{feature.description}</p>
+          <div className="grid gap-8 md:grid-cols-3">
+            {steps.map((step) => (
+              <div key={step.number} className="border-t-2 border-[#18231f] pt-5">
+                <p className="text-sm font-black text-[#e86e52]">{step.number}</p>
+                <h3 className="mt-8 text-xl font-black tracking-[-0.03em]">{step.title}</h3>
+                <p className="mt-3 max-w-xs text-sm leading-6 text-[#53605a]">{step.description}</p>
               </div>
             ))}
           </div>
