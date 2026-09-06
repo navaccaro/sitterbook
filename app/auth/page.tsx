@@ -236,6 +236,7 @@ export default function AuthPage() {
                 <a href="/api/auth/google" className="mt-7 flex w-full items-center justify-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"><span className="text-base font-bold text-blue-300">G</span> Continue with Google</a>
                 <button onClick={continueWithDemoProfile} className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Use development profile</button>
                 <p className="mt-5 text-center text-xs leading-5 text-slate-400">Google OAuth requires credentials in the server environment. Development access remains available locally.</p>
+                <p className="mt-4 text-center text-xs leading-5 text-slate-400">SitterBook helps you schedule with people you already know. We don&apos;t recruit, screen, or background-check sitters, and we don&apos;t guarantee anyone&apos;s conduct or qualifications.</p>
               </div>
             )}
           </section>

@@ -52,11 +52,11 @@ export default function Home() {
               <Logo className="h-16 sm:h-20 lg:h-24" />
             </div>
             <p className="mt-7 max-w-lg text-lg leading-8 text-[#53605a] sm:text-xl">
-              Find a trusted sitter, book the time that fits, and get back to the things that make your family yours.
+              Coordinate with the sitters your family already knows and trusts, book the time that fits, and get back to the things that make your family yours.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/auth" className="rounded-full bg-[#e86e52] px-6 py-3.5 text-center text-sm font-bold text-[#18231f] transition hover:bg-[#ef876d]">
-                Find a sitter <span aria-hidden="true">↗</span>
+                Join your circle <span aria-hidden="true">↗</span>
               </Link>
               <Link href="/parents" className="rounded-full border border-[#18231f]/20 px-6 py-3.5 text-center text-sm font-bold text-[#18231f] transition hover:bg-white">
                 See open times
@@ -124,6 +124,17 @@ export default function Home() {
             ))}
           </div>
         </section>
+
+        <footer className="border-t border-[#18231f]/15 py-10 text-xs leading-6 text-[#7a847d]">
+          <p className="max-w-3xl">
+            SitterBook is a private scheduling tool, not a sitter-finding, staffing, or matching service. It is meant for
+            coordinating with sitters your family already knows — SitterBook does not recruit, introduce, screen,
+            background-check, or verify the identity or qualifications of any sitter or family, and does not guarantee
+            the availability, conduct, or suitability of anyone using the app. Families and sitters are solely
+            responsible for deciding who provides or receives care. Use SitterBook at your own discretion and risk.
+          </p>
+          <p className="mt-4">© {new Date().getFullYear()} SitterBook. All rights reserved.</p>
+        </footer>
       </div>
     </main>
   );

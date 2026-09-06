@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "SitterBook",
-  description: "A babysitting scheduling app for sitters and families to coordinate availability and bookings.",
+  description: "A private scheduling tool for coordinating babysitting availability and bookings with sitters your family already knows.",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
