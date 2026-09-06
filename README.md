@@ -7,7 +7,7 @@ SitterBook is a babysitting coordination app for sitters and families to manage 
 - Next.js 16 App Router
 - TypeScript
 - Tailwind CSS
-- Prisma with SQLite for local persistence
+- Prisma with PostgreSQL for hosted persistence
 
 ## Getting started
 
@@ -32,11 +32,12 @@ Add the same redirect URI to the Google OAuth client. `TOKEN_ENCRYPTION_KEY` pro
 
 ## Product direction
 
-The local database is seeded automatically the first time the app reads from it. Useful database commands:
+The database is seeded automatically the first time the app reads from it. Set `DATABASE_URL` to your Neon PostgreSQL connection string before running migrations. Useful database commands:
 
 ```bash
 npm run db:generate
 npm run db:migrate
+npm run db:deploy
 npm run db:studio
 ```
 
