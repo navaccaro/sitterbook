@@ -1,7 +1,7 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { Logo } from "@/components/logo";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { RegistrationRequest } from "@/lib/registration";
@@ -145,7 +145,8 @@ export default function AuthPage() {
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col">
         <header className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3" aria-label="SitterBook home">
-            <Logo className="text-2xl" />
+            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={40} height={40} className="h-10 w-10" />
+            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={180} height={44} className="h-8 w-auto" />
           </Link>
           <Link href="/" className="text-sm font-semibold text-[#53605a] transition hover:text-[#1a2d2a]">Back home</Link>
         </header>

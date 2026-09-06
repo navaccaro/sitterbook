@@ -58,7 +58,7 @@ export default function AdminPage() {
       <main className="min-h-screen bg-[#f7f4f1] px-6 py-16 text-center text-[#53605a]">
         <div className="mx-auto max-w-3xl">
           <div className="mb-5 flex items-center justify-center gap-3">
-            <Logo className="text-2xl" />
+            <Logo className="h-8" />
           </div>
           Checking administrator access…
         </div>
@@ -71,7 +71,7 @@ export default function AdminPage() {
       <main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center bg-[#f7f4f1] px-6 py-16 text-center">
         <div className="w-full rounded-[2rem] border border-[#1a2d2a]/10 bg-white p-8 shadow-sm">
           <div className="mb-5 flex items-center justify-center gap-3">
-            <Logo className="text-2xl" />
+            <Logo className="h-8" />
           </div>
           <h1 className="text-3xl font-bold text-[#1a2d2a]">Administrator access required</h1>
           <p className="mt-3 text-[#53605a]">Sign in with an approved administrator account to manage family requests.</p>
@@ -138,7 +138,7 @@ export default function AdminPage() {
       <div className="mx-auto max-w-7xl px-6 py-8 sm:px-8 lg:px-10">
         <header className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div className="flex items-center gap-3">
-            <Logo className="text-2xl" />
+            <Logo className="h-9" />
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/auth" className="rounded-full border border-[#1a2d2a]/15 bg-white px-4 py-2.5 text-sm font-semibold text-[#1a2d2a] transition hover:bg-[#f7f4f1]">Preview sign-in</Link>

@@ -1,7 +1,13 @@
-export function Logo({ className = "text-2xl" }: { className?: string }) {
+import Image from "next/image";
+
+export function Logo({ className = "h-8" }: { className?: string }) {
   return (
-    <span className={`font-black tracking-tight text-[#1a2d2a] ${className}`}>
-      Sitter<span className="text-[#e86e52]">Book</span>
-    </span>
+    <Image
+      src="/SitterBookLogo.png"
+      alt="SitterBook"
+      width={1184}
+      height={295}
+      className={`w-auto ${className}`}
+    />
   );
 }

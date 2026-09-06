@@ -31,7 +31,7 @@ export default function Home() {
       <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8 lg:px-12">
         <header className="flex items-center justify-between border-b border-[#18231f]/15 pb-5">
           <Link href="/" className="flex items-center gap-3" aria-label="SitterBook home">
-            <Logo className="text-3xl" />
+            <Logo className="h-9" />
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-semibold text-[#53605a] sm:flex">
             <Link href="#how-it-works" className="transition hover:text-[#e86e52]">How it works</Link>
@@ -49,7 +49,7 @@ export default function Home() {
               Your family’s sitter circle
             </span>
             <div className="mt-6 flex items-center gap-4 lg:gap-5">
-              <Logo className="text-5xl sm:text-6xl lg:text-7xl" />
+              <Logo className="h-16 sm:h-20 lg:h-24" />
             </div>
             <p className="mt-7 max-w-lg text-lg leading-8 text-[#53605a] sm:text-xl">
               Find a trusted sitter, book the time that fits, and get back to the things that make your family yours.

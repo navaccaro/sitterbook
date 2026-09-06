@@ -102,7 +102,7 @@ export default function ParentsPage() {
       <main className="min-h-screen bg-[#f7f4f1] px-6 py-16">
         <div className="mx-auto max-w-4xl text-center">
           <div className="mb-6 flex items-center justify-center gap-3">
-            <Logo className="text-2xl" />
+            <Logo className="h-8" />
           </div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#e86e52]">Parents</p>
           <h1 className="mt-3 text-3xl font-bold text-[#1a2d2a]">Checking family access…</h1>
@@ -116,7 +116,7 @@ export default function ParentsPage() {
       <main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center bg-[#f7f4f1] px-6 py-16">
         <div className="w-full rounded-[2rem] border border-[#1a2d2a]/10 bg-white p-8 text-center shadow-sm">
           <div className="mb-5 flex items-center justify-center gap-3">
-            <Logo className="text-2xl" />
+            <Logo className="h-8" />
           </div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#e86e52]">Access required</p>
           <h1 className="mt-3 text-4xl font-black tracking-tight text-[#1a2d2a]">Family approval is still pending.</h1>
@@ -213,7 +213,7 @@ export default function ParentsPage() {
     <main className="mx-auto max-w-6xl bg-[#f7f4f1] px-6 py-10">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="flex items-center gap-3">
-          <Logo className="text-2xl" />
+          <Logo className="h-9" />
         </div>
         <div className="flex items-center gap-3 rounded-full border border-[#1a2d2a]/10 bg-white px-4 py-2 shadow-sm">
           <div>
