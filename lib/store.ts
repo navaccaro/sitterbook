@@ -119,7 +119,9 @@ function toUser(user: { id: string; name: string; email: string; role: string; a
   };
 }
 
-async function ensureSeeded() {
+let seedPromise: Promise<void> | null = null;
+
+async function seedDatabase() {
   if (await prisma.user.count() > 0) {
     return;
   }
@@ -147,6 +149,17 @@ async function ensureSeeded() {
       })),
     }),
   ]);
+}
+
+function ensureSeeded() {
+  if (!seedPromise) {
+    seedPromise = seedDatabase().catch((error) => {
+      seedPromise = null;
+      throw error;
+    });
+  }
+
+  return seedPromise;
 }
 
 export async function getRegistrationRequests(): Promise<RegistrationRequest[]> {
