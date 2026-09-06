@@ -28,7 +28,7 @@ GOOGLE_REDIRECT_URI="http://localhost:3000/api/auth/google/callback"
 TOKEN_ENCRYPTION_KEY="a-long-random-secret"
 ```
 
-Add the same redirect URI to the Google OAuth client. `TOKEN_ENCRYPTION_KEY` protects Google tokens at rest. Without Google values, local demo sign-in and prefilled Google Calendar links remain available.
+Add the same redirect URI to the Google OAuth client. `TOKEN_ENCRYPTION_KEY` protects Google tokens at rest. Without Google values, local development access and prefilled Google Calendar links remain available.
 
 ## Deploy to Vercel
 

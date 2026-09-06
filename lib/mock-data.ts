@@ -57,14 +57,14 @@ export const users: User[] = [
   {
     id: "parent-1",
     name: "The Smiths",
-    email: "smiths@example.com",
+    email: "smiths@sitterbook.app",
     role: "parent",
     approved: true,
   },
   {
     id: "parent-2",
     name: "The Lopez Family",
-    email: "lopez@example.com",
+    email: "lopez@sitterbook.app",
     role: "parent",
     approved: false,
   },

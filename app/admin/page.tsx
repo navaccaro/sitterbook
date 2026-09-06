@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { useEffect, useState, type FormEvent } from "react";
 import type { AvailabilityBlock, Booking, User } from "@/lib/mock-data";
 import type { RegistrationRequest } from "@/lib/registration";
@@ -58,8 +58,7 @@ export default function AdminPage() {
       <main className="min-h-screen bg-[#f7f4f1] px-6 py-16 text-center text-[#53605a]">
         <div className="mx-auto max-w-3xl">
           <div className="mb-5 flex items-center justify-center gap-3">
-            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={40} height={40} className="h-10 w-10" />
-            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={180} height={44} className="h-8 w-auto" />
+            <Logo className="text-2xl" />
           </div>
           Checking administrator access…
         </div>
@@ -72,8 +71,7 @@ export default function AdminPage() {
       <main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center bg-[#f7f4f1] px-6 py-16 text-center">
         <div className="w-full rounded-[2rem] border border-[#1a2d2a]/10 bg-white p-8 shadow-sm">
           <div className="mb-5 flex items-center justify-center gap-3">
-            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={40} height={40} className="h-10 w-10" />
-            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={180} height={44} className="h-8 w-auto" />
+            <Logo className="text-2xl" />
           </div>
           <h1 className="text-3xl font-bold text-[#1a2d2a]">Administrator access required</h1>
           <p className="mt-3 text-[#53605a]">Sign in with an approved administrator account to manage family requests.</p>
@@ -140,8 +138,7 @@ export default function AdminPage() {
       <div className="mx-auto max-w-7xl px-6 py-8 sm:px-8 lg:px-10">
         <header className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div className="flex items-center gap-3">
-            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={42} height={42} className="h-11 w-11" />
-            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={190} height={44} className="h-8 w-auto" />
+            <Logo className="text-2xl" />
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/auth" className="rounded-full border border-[#1a2d2a]/15 bg-white px-4 py-2.5 text-sm font-semibold text-[#1a2d2a] transition hover:bg-[#f7f4f1]">Preview sign-in</Link>
@@ -241,7 +238,6 @@ export default function AdminPage() {
                 value={sitterName}
                 onChange={(event) => setSitterName(event.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Sitter name"
                 required
               />
             </div>
@@ -253,7 +249,6 @@ export default function AdminPage() {
                 value={sitterEmail}
                 onChange={(event) => setSitterEmail(event.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                placeholder="sitter@example.com"
                 required
               />
             </div>

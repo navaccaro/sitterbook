@@ -15,11 +15,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SitterBook",
   description: "A babysitting scheduling app for sitters and families to coordinate availability and bookings.",
-  icons: {
-    icon: "/sitterbook-app-icon.svg",
-    shortcut: "/sitterbook-app-icon.svg",
-    apple: "/sitterbook-app-icon.svg",
-  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

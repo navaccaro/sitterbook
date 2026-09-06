@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 const steps = [
   {
@@ -31,20 +31,7 @@ export default function Home() {
       <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8 lg:px-12">
         <header className="flex items-center justify-between border-b border-[#18231f]/15 pb-5">
           <Link href="/" className="flex items-center gap-3" aria-label="SitterBook home">
-            <Image
-              src="/sitterbook-app-icon.svg"
-              alt="SitterBook icon"
-              width={48}
-              height={48}
-              className="h-12 w-12 shrink-0"
-            />
-            <Image
-              src="/sitterbook-wordmark.svg"
-              alt="SitterBook"
-              width={220}
-              height={54}
-              className="h-9 w-auto"
-            />
+            <Logo className="text-3xl" />
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-semibold text-[#53605a] sm:flex">
             <Link href="#how-it-works" className="transition hover:text-[#e86e52]">How it works</Link>
@@ -62,20 +49,7 @@ export default function Home() {
               Your family’s sitter circle
             </span>
             <div className="mt-6 flex items-center gap-4 lg:gap-5">
-              <Image
-                src="/sitterbook-app-icon.svg"
-                alt="SitterBook icon"
-                width={120}
-                height={120}
-                className="h-20 w-20 shrink-0 sm:h-24 sm:w-24 lg:h-28 lg:w-28"
-              />
-              <Image
-                src="/sitterbook-wordmark.svg"
-                alt="SitterBook"
-                width={760}
-                height={220}
-                className="h-16 w-auto sm:h-20 lg:h-24"
-              />
+              <Logo className="text-5xl sm:text-6xl lg:text-7xl" />
             </div>
             <p className="mt-7 max-w-lg text-lg leading-8 text-[#53605a] sm:text-xl">
               Find a trusted sitter, book the time that fits, and get back to the things that make your family yours.

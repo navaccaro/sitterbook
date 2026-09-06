@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { AvailabilityBlock, Booking, User } from "@/lib/mock-data";
 import { availabilityBlocks as defaultAvailabilityBlocks, bookings as defaultBookings, users as defaultUsers } from "@/lib/mock-data";
-import { demoRegistrationRequests, type RegistrationRequest } from "@/lib/registration";
+import { seedRegistrationRequests, type RegistrationRequest } from "@/lib/registration";
 import { canBookBlock } from "@/lib/scheduler";
 import { prisma } from "@/lib/prisma";
 import { decryptSecret, encryptSecret } from "@/lib/secrets";
@@ -129,7 +129,7 @@ async function seedDatabase() {
   await prisma.$transaction([
     prisma.user.createMany({ data: defaultUsers }),
     prisma.registrationRequest.createMany({
-      data: demoRegistrationRequests.map((request) => ({
+      data: seedRegistrationRequests.map((request) => ({
         ...request,
         requestedAt: new Date(request.requestedAt),
       })),
@@ -475,7 +475,7 @@ export async function updateBookingSchedule(bookingId: string, updates: { start?
 export async function createSession(profile: { name: string; email: string }) {
   await ensureSeeded();
   const matchingUser = await prisma.user.findFirst({
-    where: { role: "parent", email: normaliseEmail(profile.email) },
+    where: { email: normaliseEmail(profile.email) },
   });
   const createdAt = new Date();
   const session: Session = {

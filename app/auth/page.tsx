@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { RegistrationRequest } from "@/lib/registration";
@@ -60,7 +60,18 @@ export default function AuthPage() {
         return;
       }
 
-      const data = (await response.json()) as { session: Profile; status: string };
+      const data = (await response.json()) as { session: Profile & { role?: string }; status: string };
+
+      if (data.session.role === "admin") {
+        router.replace("/admin");
+        return;
+      }
+
+      if (data.session.role === "sitter") {
+        router.replace("/dashboard");
+        return;
+      }
+
       const currentRequest = await fetchRegistrationByEmail(data.session.email);
 
       if (data.status === "approved") {
@@ -76,7 +87,7 @@ export default function AuthPage() {
   }, [router]);
 
   async function continueWithGoogle() {
-    const nextProfile = emptyProfile("The New Family", "new.family@example.com");
+    const nextProfile = emptyProfile("The New Family", "newfamily@sitterbook.app");
     const existing = await fetchRegistrationByEmail(nextProfile.email);
 
     if (existing?.status === "approved") {
@@ -96,7 +107,7 @@ export default function AuthPage() {
     setRequest(existing ?? null);
   }
 
-  function continueWithGoogleDemo() {
+  function continueWithDemoProfile() {
     void continueWithGoogle();
   }
 
@@ -134,8 +145,7 @@ export default function AuthPage() {
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col">
         <header className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3" aria-label="SitterBook home">
-            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={40} height={40} className="h-10 w-10" />
-            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={180} height={44} className="h-8 w-auto" />
+            <Logo className="text-2xl" />
           </Link>
           <Link href="/" className="text-sm font-semibold text-[#53605a] transition hover:text-[#1a2d2a]">Back home</Link>
         </header>
@@ -188,32 +198,32 @@ export default function AuthPage() {
                 <div className="mt-6 border-t border-slate-100 pt-5">
                   <p className="text-sm font-semibold text-slate-900">Primary contact</p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <input required aria-label="Primary contact name" placeholder="Primary contact name" value={profile.primaryContactName} onChange={(event) => setProfile({ ...profile, primaryContactName: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
-                    <input required type="tel" aria-label="Primary contact phone" placeholder="Primary phone" value={profile.primaryPhone} onChange={(event) => setProfile({ ...profile, primaryPhone: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    <input required aria-label="Primary contact name" value={profile.primaryContactName} onChange={(event) => setProfile({ ...profile, primaryContactName: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    <input required type="tel" aria-label="Primary contact phone" value={profile.primaryPhone} onChange={(event) => setProfile({ ...profile, primaryPhone: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
                   </div>
                 </div>
                 <div className="mt-5">
                   <p className="text-sm font-semibold text-slate-900">Secondary contact <span className="font-normal text-slate-400">(optional)</span></p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <input aria-label="Secondary contact name" placeholder="Secondary contact name" value={profile.secondaryContactName} onChange={(event) => setProfile({ ...profile, secondaryContactName: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
-                    <input type="tel" aria-label="Secondary contact phone" placeholder="Secondary phone" value={profile.secondaryPhone} onChange={(event) => setProfile({ ...profile, secondaryPhone: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    <input aria-label="Secondary contact name" value={profile.secondaryContactName} onChange={(event) => setProfile({ ...profile, secondaryContactName: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    <input type="tel" aria-label="Secondary contact phone" value={profile.secondaryPhone} onChange={(event) => setProfile({ ...profile, secondaryPhone: event.target.value })} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
                   </div>
                 </div>
                 <div className="mt-5">
                   <p className="text-sm font-semibold text-slate-900">Home address</p>
                   <div className="mt-3 space-y-3">
-                    <input required aria-label="Street address" placeholder="Street address" value={profile.addressLine1} onChange={(event) => setProfile({ ...profile, addressLine1: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
-                    <input aria-label="Apartment or unit" placeholder="Apartment, unit, or access details (optional)" value={profile.addressLine2} onChange={(event) => setProfile({ ...profile, addressLine2: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    <input required aria-label="Street address" value={profile.addressLine1} onChange={(event) => setProfile({ ...profile, addressLine1: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                    <input aria-label="Apartment or unit" value={profile.addressLine2} onChange={(event) => setProfile({ ...profile, addressLine2: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
                     <div className="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.7fr)_minmax(0,0.9fr)]">
-                      <input required aria-label="City" placeholder="City" value={profile.city} onChange={(event) => setProfile({ ...profile, city: event.target.value })} className="min-w-0 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
-                      <input required aria-label="State" placeholder="State" value={profile.state} onChange={(event) => setProfile({ ...profile, state: event.target.value })} className="min-w-0 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
-                      <input required aria-label="Postal code" placeholder="ZIP / postal" value={profile.postalCode} onChange={(event) => setProfile({ ...profile, postalCode: event.target.value })} className="min-w-0 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                      <input required aria-label="City" value={profile.city} onChange={(event) => setProfile({ ...profile, city: event.target.value })} className="min-w-0 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                      <input required aria-label="State" value={profile.state} onChange={(event) => setProfile({ ...profile, state: event.target.value })} className="min-w-0 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                      <input required aria-label="Postal code" value={profile.postalCode} onChange={(event) => setProfile({ ...profile, postalCode: event.target.value })} className="min-w-0 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4" />
                     </div>
                   </div>
                 </div>
                 <label className="mt-5 block text-sm font-semibold text-slate-700">
                   Anything the sitter should know? <span className="font-normal text-slate-400">(optional)</span>
-                  <textarea rows={3} value={profile.additionalInfo} onChange={(event) => setProfile({ ...profile, additionalInfo: event.target.value })} placeholder="Pets, allergies, accessibility needs, routines, or other context" className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 font-normal text-slate-900 outline-none ring-violet-200 focus:ring-4" />
+                  <textarea rows={3} value={profile.additionalInfo} onChange={(event) => setProfile({ ...profile, additionalInfo: event.target.value })} className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 font-normal text-slate-900 outline-none ring-violet-200 focus:ring-4" />
                 </label>
                 <button disabled={isSubmitting} className="mt-6 w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:cursor-wait disabled:opacity-60">Send approval request</button>
               </form>
@@ -223,8 +233,8 @@ export default function AuthPage() {
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">Sign in to get started</h2>
                 <p className="mt-3 text-sm leading-6 text-slate-600">New families are held for admin approval before they can make bookings.</p>
                 <a href="/api/auth/google" className="mt-7 flex w-full items-center justify-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"><span className="text-base font-bold text-blue-300">G</span> Continue with Google</a>
-                <button onClick={continueWithGoogleDemo} className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Use local demo profile</button>
-                <p className="mt-5 text-center text-xs leading-5 text-slate-400">Google OAuth requires credentials in the server environment. The local demo remains available for development.</p>
+                <button onClick={continueWithDemoProfile} className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Use development profile</button>
+                <p className="mt-5 text-center text-xs leading-5 text-slate-400">Google OAuth requires credentials in the server environment. Development access remains available locally.</p>
               </div>
             )}
           </section>

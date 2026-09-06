@@ -1,12 +1,11 @@
 "use client";
 
-import Image from "next/image";
+import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { useEffect, useState } from "react";
-import { getUserById, type AvailabilityBlock, type Booking } from "@/lib/mock-data";
+import type { AvailabilityBlock, Booking } from "@/lib/mock-data";
 import { getBlockDurationHours } from "@/lib/scheduler";
 import { googleCalendarUrl } from "@/lib/calendar";
-
-const sitterId = "charlotte";
 
 type Draft = {
   label: string;
@@ -60,24 +59,41 @@ export default function DashboardPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sharedId, setSharedId] = useState<string | null>(null);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied">("checking");
+  const [sitterId, setSitterId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
+      const sessionResponse = await fetch("/api/session");
+      const sessionData = sessionResponse.ok
+        ? ((await sessionResponse.json()) as { session?: { userId?: string; role?: string } })
+        : null;
+
+      if (sessionData?.session?.role !== "sitter" || !sessionData.session.userId) {
+        setAccessState("denied");
+        return;
+      }
+
+      const currentSitterId = sessionData.session.userId;
+      setSitterId(currentSitterId);
+
       const [nextBlocks, nextBookings] = await Promise.all([
         fetch("/api/availability").then((response) => response.json() as Promise<AvailabilityBlock[]>),
         fetch("/api/bookings").then((response) => response.json() as Promise<Booking[]>),
       ]);
 
-      setBlocks(nextBlocks.filter((block) => block.sitterId === sitterId));
+      setBlocks(nextBlocks.filter((block) => block.sitterId === currentSitterId));
       setBookings(nextBookings);
 
       const firstBlock = nextBlocks
-        .filter((block) => block.sitterId === sitterId)
+        .filter((block) => block.sitterId === currentSitterId)
         .sort((a, b) => a.start.localeCompare(b.start))[0];
 
       if (firstBlock) {
         setCalendarMonth(new Date(`${firstBlock.start.slice(0, 7)}-01T00:00:00`));
       }
+
+      setAccessState("allowed");
     }
 
     void load();
@@ -90,6 +106,34 @@ export default function DashboardPage() {
   const openHours = blocks.reduce((total, block) => {
     return total + getBlockDurationHours(block);
   }, 0);
+
+  if (accessState === "checking") {
+    return (
+      <main className="min-h-screen bg-[#f7f4f1] px-6 py-16 text-center text-[#53605a]">
+        <div className="mx-auto max-w-3xl">
+          <div className="mb-5 flex items-center justify-center gap-3">
+            <Logo className="text-2xl" />
+          </div>
+          Checking sitter access…
+        </div>
+      </main>
+    );
+  }
+
+  if (accessState === "denied") {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center bg-[#f7f4f1] px-6 py-16 text-center">
+        <div className="w-full rounded-[2rem] border border-[#1a2d2a]/10 bg-white p-8 shadow-sm">
+          <div className="mb-5 flex items-center justify-center gap-3">
+            <Logo className="text-2xl" />
+          </div>
+          <h1 className="text-3xl font-bold text-[#1a2d2a]">Sitter access required</h1>
+          <p className="mt-3 text-[#53605a]">Sign in with an approved sitter account to manage availability.</p>
+          <Link href="/auth" className="mt-6 inline-flex rounded-full bg-[#e86e52] px-5 py-3 text-sm font-semibold text-[#1a2d2a]">Go to sign-in</Link>
+        </div>
+      </main>
+    );
+  }
 
   function startNewBlock() {
     setEditingId(null);
@@ -113,8 +157,7 @@ export default function DashboardPage() {
     }
 
     const nextBlock = {
-      id: editingId ?? `block-${Date.now()}`,
-      sitterId,
+      ...(editingId ? { id: editingId } : {}),
       start,
       end,
       status: "open" as const,
@@ -178,8 +221,7 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-7xl px-6 py-8 sm:px-8 lg:px-10">
         <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div className="flex items-center gap-3">
-            <Image src="/sitterbook-app-icon.svg" alt="SitterBook icon" width={42} height={42} className="h-11 w-11" />
-            <Image src="/sitterbook-wordmark.svg" alt="SitterBook" width={190} height={44} className="h-8 w-auto" />
+            <Logo className="text-2xl" />
           </div>
           <button onClick={startNewBlock} className="rounded-full bg-[#e86e52] px-5 py-3 text-sm font-semibold text-[#1a2d2a] shadow-lg shadow-[#e86e52]/20 transition hover:bg-[#ef876d]">
             + New availability
@@ -324,7 +366,7 @@ export default function DashboardPage() {
               <form onSubmit={saveBlock} className="mt-5 space-y-4">
                 <label className="block text-sm font-semibold text-slate-700">
                   Window name
-                  <input required value={draft.label} onChange={(event) => setDraft({ ...draft, label: event.target.value })} placeholder="Friday evening" className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal text-slate-900 outline-none ring-violet-200 transition focus:ring-4" />
+                  <input required value={draft.label} onChange={(event) => setDraft({ ...draft, label: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal text-slate-900 outline-none ring-violet-200 transition focus:ring-4" />
                 </label>
                 <label className="block text-sm font-semibold text-slate-700">
                   Date
@@ -364,7 +406,6 @@ export default function DashboardPage() {
                       </div>
                       <span className="rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-semibold text-emerald-700">{booking.status}</span>
                     </div>
-                    <p className="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-500">{getUserById(booking.parentId)?.email ?? "family@example.com"}</p>
                     {booking.notes && <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900"><span className="font-semibold">Family notes:</span> {booking.notes}</p>}
                     <a
                       href={googleCalendarUrl(`SitterBook: ${booking.parentName}`, booking.start, booking.end, "Confirmed SitterBook booking")}

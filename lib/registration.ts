@@ -23,11 +23,11 @@ export type RegistrationRequest = {
 export const registrationStorageKey = "sitterbook.registrationRequests";
 export const registrationEvent = "sitterbook:registrations";
 
-export const demoRegistrationRequests: RegistrationRequest[] = [
+export const seedRegistrationRequests: RegistrationRequest[] = [
   {
     id: "request-lopez",
     name: "The Lopez Family",
-    email: "lopez@example.com",
+    email: "lopez@sitterbook.app",
     provider: "google",
     status: "pending",
     primaryContactName: "",
@@ -50,20 +50,20 @@ function normaliseEmail(email: string) {
 
 export function readRegistrationRequests(): RegistrationRequest[] {
   if (typeof window === "undefined") {
-    return demoRegistrationRequests;
+    return seedRegistrationRequests;
   }
 
   const stored = window.localStorage.getItem(registrationStorageKey);
 
   if (!stored) {
-    return demoRegistrationRequests;
+    return seedRegistrationRequests;
   }
 
   try {
     const parsed = JSON.parse(stored) as RegistrationRequest[];
-    return Array.isArray(parsed) ? parsed : demoRegistrationRequests;
+    return Array.isArray(parsed) ? parsed : seedRegistrationRequests;
   } catch {
-    return demoRegistrationRequests;
+    return seedRegistrationRequests;
   }
 }
 
