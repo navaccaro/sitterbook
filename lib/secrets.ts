@@ -3,7 +3,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 const developmentSecret = "sitterbook-local-development-token-key";
 
 function encryptionKey() {
-  const secret = process.env.TOKEN_ENCRYPTION_KEY ?? (process.env.NODE_ENV === "production" ? "" : developmentSecret);
+  const secret = process.env.TOKEN_ENCRYPTION_KEY || (process.env.NODE_ENV === "production" ? "" : developmentSecret);
 
   if (!secret) {
     throw new Error("TOKEN_ENCRYPTION_KEY must be configured in production.");

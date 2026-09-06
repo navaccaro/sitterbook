@@ -30,6 +30,16 @@ TOKEN_ENCRYPTION_KEY="a-long-random-secret"
 
 Add the same redirect URI to the Google OAuth client. `TOKEN_ENCRYPTION_KEY` protects Google tokens at rest. Without Google values, local development access and prefilled Google Calendar links remain available.
 
+## Testing
+
+Unit tests cover the pure business logic in `lib/` (booking conflict rules, calendar URL formatting, secret encryption, session/role auth guards, Google OAuth/Calendar helpers, and the Prisma-backed data layer via an in-memory fake).
+
+```bash
+npm test
+npm run test:watch
+npm run test:coverage
+```
+
 ## Deploy to Vercel
 
 1. Import the GitHub repository into Vercel.

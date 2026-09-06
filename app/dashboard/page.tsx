@@ -100,7 +100,8 @@ export default function DashboardPage() {
   }, []);
 
   const sitterBookings = bookings.filter((booking) => booking.sitterId === sitterId);
-  const bookedHours = sitterBookings.reduce((total, booking) => {
+  const activeSitterBookings = sitterBookings.filter((booking) => booking.status !== "cancelled");
+  const bookedHours = activeSitterBookings.reduce((total, booking) => {
     return total + (new Date(booking.end).getTime() - new Date(booking.start).getTime()) / 3600000;
   }, 0);
   const openHours = blocks.reduce((total, block) => {
@@ -190,7 +191,7 @@ export default function DashboardPage() {
   }
 
   async function removeBlock(blockId: string) {
-    if (sitterBookings.some((booking) => booking.availabilityId === blockId)) {
+    if (activeSitterBookings.some((booking) => booking.availabilityId === blockId)) {
       return;
     }
 
@@ -240,12 +241,12 @@ export default function DashboardPage() {
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm font-medium text-slate-500">Booked time</p>
             <p className="mt-2 text-3xl font-bold text-slate-900">{bookedHours}h</p>
-            <p className="mt-1 text-sm text-violet-600">{sitterBookings.length} family bookings</p>
+            <p className="mt-1 text-sm text-violet-600">{activeSitterBookings.length} family bookings</p>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm font-medium text-slate-500">Next booking</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">{sitterBookings[0]?.parentName ?? "No bookings"}</p>
-            <p className="mt-1 text-sm text-slate-500">{sitterBookings[0] ? formatDate(sitterBookings[0].start) : "Your schedule is open"}</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">{activeSitterBookings[0]?.parentName ?? "No bookings"}</p>
+            <p className="mt-1 text-sm text-slate-500">{activeSitterBookings[0] ? formatDate(activeSitterBookings[0].start) : "Your schedule is open"}</p>
           </div>
         </section>
 
@@ -323,7 +324,7 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-4">
               {[...blocks].sort((a, b) => a.start.localeCompare(b.start)).map((block) => {
-                const blockBookings = sitterBookings.filter((booking) => booking.availabilityId === block.id);
+                const blockBookings = activeSitterBookings.filter((booking) => booking.availabilityId === block.id);
 
                 return (
                   <article key={block.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-violet-200 sm:p-6">
@@ -331,8 +332,8 @@ export default function DashboardPage() {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-lg font-bold text-slate-900">{block.label}</h3>
-                          <span className={block.status === "partial" ? "rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700" : "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"}>
-                            {block.status === "partial" ? "Partially booked" : "Open"}
+                          <span className={blockBookings.length > 0 ? "rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700" : "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"}>
+                            {blockBookings.length > 0 ? "Partially booked" : "Open"}
                           </span>
                         </div>
                         <p className="mt-2 text-sm font-medium text-slate-600">{formatDate(block.start)}</p>
@@ -396,10 +397,10 @@ export default function DashboardPage() {
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Upcoming</p>
                   <h2 className="mt-1 text-xl font-bold text-slate-900">Confirmed bookings</h2>
                 </div>
-                <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">{sitterBookings.length}</span>
+                <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">{activeSitterBookings.length}</span>
               </div>
               <div className="mt-5 space-y-3">
-                {sitterBookings.map((booking) => (
+                {activeSitterBookings.map((booking) => (
                   <div key={booking.id} className="rounded-2xl bg-slate-50 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>

@@ -7,8 +7,24 @@ function normaliseEmail(email: string) {
 }
 
 export async function GET() {
-  const bookings = await getBookings();
-  return NextResponse.json(bookings);
+  const session = await getCurrentSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  }
+
+  const [bookings, user] = await Promise.all([getBookings(), getUserById(session.userId)]);
+  const isPrivileged = user?.role === "admin";
+
+  const visible = bookings.map((booking) => {
+    if (isPrivileged || booking.parentId === session.userId || booking.sitterId === session.userId) {
+      return booking;
+    }
+
+    return { ...booking, notes: "", parentName: "Reserved" };
+  });
+
+  return NextResponse.json(visible);
 }
 
 export async function POST(request: Request) {

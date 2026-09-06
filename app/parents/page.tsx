@@ -61,7 +61,7 @@ export default function ParentsPage() {
           name: sessionData.session.name,
           email: sessionData.session.email,
         };
-        const requests = (await fetch("/api/registrations").then((response) =>
+        const requests = (await fetch(`/api/registrations?email=${encodeURIComponent(storedFamily.email)}`).then((response) =>
           response.json() as Promise<Array<{ email: string; status: string }>>
         ));
         const currentRequest =
@@ -246,10 +246,11 @@ export default function ParentsPage() {
           const candidateStart = `${block.start.slice(0, 10)}T${times.start}:00`;
           const candidateEnd = `${block.start.slice(0, 10)}T${times.end}:00`;
           const isValidBooking = new Date(candidateEnd) > new Date(candidateStart) && canBookBlock(block, candidateStart, candidateEnd, currentBookings);
-          const ownReservation = currentBookings.find(
-            (booking) =>
-              booking.availabilityId === block.id &&
-              familyProfile && booking.parentId === familyProfile.id,
+          const activeBlockBookings = currentBookings.filter(
+            (booking) => booking.availabilityId === block.id && booking.status !== "cancelled",
+          );
+          const ownReservation = activeBlockBookings.find(
+            (booking) => familyProfile && booking.parentId === familyProfile.id,
           );
 
           return (
@@ -257,7 +258,7 @@ export default function ParentsPage() {
               <div className="flex items-center justify-between gap-3">
                 <p className="text-lg font-semibold text-slate-900">{block.label}</p>
                 <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                  {block.status}
+                  {activeBlockBookings.length > 0 ? "partially booked" : "open"}
                 </span>
               </div>
 

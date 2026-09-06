@@ -84,7 +84,7 @@ export default function AdminPage() {
   const pendingRequests = requests.filter((request) => request.status === "pending");
   const sitterBlocks = availability.map((block) => ({
     ...block,
-    bookedCount: bookings.filter((booking) => booking.availabilityId === block.id).length,
+    bookedCount: bookings.filter((booking) => booking.availabilityId === block.id && booking.status !== "cancelled").length,
   }));
 
   async function updateRequest(requestId: string, status: "approved" | "rejected") {
@@ -142,7 +142,6 @@ export default function AdminPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/auth" className="rounded-full border border-[#1a2d2a]/15 bg-white px-4 py-2.5 text-sm font-semibold text-[#1a2d2a] transition hover:bg-[#f7f4f1]">Preview sign-in</Link>
-            <Link href="/dashboard" className="rounded-full bg-[#1a2d2a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#304039]">Sitter dashboard</Link>
           </div>
         </header>
 
@@ -214,7 +213,7 @@ export default function AdminPage() {
                       <p className="font-semibold text-slate-900">{block.label}</p>
                       <p className="mt-1 text-sm text-slate-500">{new Date(block.start).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</p>
                     </div>
-                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-violet-700">{block.status}</span>
+                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-violet-700">{block.bookedCount > 0 ? "partially booked" : "open"}</span>
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3 text-sm text-slate-500">
                     <span>Booked windows</span>

@@ -6,7 +6,20 @@ import {
 } from "@/lib/store";
 import { getCurrentAdmin } from "@/lib/admin-auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const email = searchParams.get("email");
+
+  if (email) {
+    const requests = await getRegistrationRequests();
+    const match = requests.find((request) => request.email.trim().toLowerCase() === email.trim().toLowerCase());
+    return NextResponse.json(match ? [match] : []);
+  }
+
+  if (!(await getCurrentAdmin())) {
+    return NextResponse.json({ error: "Administrator access is required." }, { status: 403 });
+  }
+
   const requests = await getRegistrationRequests();
   return NextResponse.json(requests);
 }

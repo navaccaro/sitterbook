@@ -39,7 +39,7 @@ function emptyProfile(name: string, email: string): Profile {
 }
 
 async function fetchRegistrationByEmail(email: string) {
-  const requests = await fetch("/api/registrations").then((response) =>
+  const requests = await fetch(`/api/registrations?email=${encodeURIComponent(email)}`).then((response) =>
     response.json() as Promise<RegistrationRequest[]>,
   );
 
