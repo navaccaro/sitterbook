@@ -70,3 +70,25 @@ model Session {
 
   @@index([email])
 }
+
+// A sitter and a parent must both consent (via invite or approved request) before they can see or book each other.
+model Connection {
+  id          String    @id
+  sitterId    String
+  parentId    String
+  status      String
+  createdAt   DateTime
+  respondedAt DateTime?
+
+  @@unique([sitterId, parentId])
+  @@index([parentId])
+}
+
+model Invite {
+  token     String    @id
+  sitterId  String
+  createdAt DateTime
+  revokedAt DateTime?
+
+  @@index([sitterId])
+}

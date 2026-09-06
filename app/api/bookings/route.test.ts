@@ -8,11 +8,12 @@ vi.mock("@/lib/store", () => ({
   getRegistrationRequests: vi.fn(),
   createBookingForBlock: vi.fn(),
   cancelBooking: vi.fn(),
+  isConnected: vi.fn(),
 }));
 
 import { getCurrentSession } from "@/lib/auth";
-import { getBookings, getUserById } from "@/lib/store";
-import { GET } from "@/app/api/bookings/route";
+import { getAvailabilityBlocks, getBookings, getRegistrationRequests, getUserById, isConnected } from "@/lib/store";
+import { GET, POST } from "@/app/api/bookings/route";
 
 const bookings = [
   {
@@ -85,5 +86,57 @@ describe("GET /api/bookings", () => {
 
     expect(owned.notes).toBe("Lopez private notes");
     expect(other.notes).toBe("");
+  });
+});
+
+describe("POST /api/bookings", () => {
+  const parentSession = { userId: "parent-1", email: "smiths@sitterbook.app" };
+  const block = {
+    id: "block-1",
+    sitterId: "charlotte",
+    start: "2026-09-20T10:00:00",
+    end: "2026-09-20T12:00:00",
+    status: "open",
+    label: "Saturday morning",
+  };
+
+  function postRequest(body: unknown) {
+    return new Request("http://localhost/api/bookings", { method: "POST", body: JSON.stringify(body) });
+  }
+
+  beforeEach(() => {
+    vi.mocked(getAvailabilityBlocks).mockReset();
+    vi.mocked(getRegistrationRequests).mockReset();
+    vi.mocked(isConnected).mockReset();
+    vi.mocked(getAvailabilityBlocks).mockResolvedValue([block] as never);
+    vi.mocked(getRegistrationRequests).mockResolvedValue([] as never);
+    vi.mocked(getCurrentSession).mockResolvedValue(parentSession as never);
+    vi.mocked(getUserById).mockResolvedValue({ id: "parent-1", role: "parent", approved: true, email: "smiths@sitterbook.app" } as never);
+  });
+
+  const bookingBody = {
+    blockId: "block-1",
+    parentId: "parent-1",
+    parentName: "The Smiths",
+    parentEmail: "smiths@sitterbook.app",
+    start: "2026-09-20T10:00:00",
+    end: "2026-09-20T11:00:00",
+  };
+
+  it("rejects booking a sitter the family is not connected to", async () => {
+    vi.mocked(isConnected).mockResolvedValue(false);
+
+    const response = await POST(postRequest(bookingBody));
+    expect(response.status).toBe(403);
+    expect(isConnected).toHaveBeenCalledWith("charlotte", "parent-1");
+  });
+
+  it("allows booking once the family and sitter are connected", async () => {
+    vi.mocked(isConnected).mockResolvedValue(true);
+    const { createBookingForBlock } = await import("@/lib/store");
+    vi.mocked(createBookingForBlock).mockResolvedValue({ id: "booking-new" } as never);
+
+    const response = await POST(postRequest(bookingBody));
+    expect(response.status).toBe(200);
   });
 });

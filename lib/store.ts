@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
-import type { AvailabilityBlock, Booking, User } from "@/lib/mock-data";
-import { availabilityBlocks as defaultAvailabilityBlocks, bookings as defaultBookings, users as defaultUsers } from "@/lib/mock-data";
+import type { AvailabilityBlock, Booking, Connection, User } from "@/lib/mock-data";
+import {
+  availabilityBlocks as defaultAvailabilityBlocks,
+  bookings as defaultBookings,
+  connections as defaultConnections,
+  users as defaultUsers,
+} from "@/lib/mock-data";
 import { seedRegistrationRequests, type RegistrationRequest } from "@/lib/registration";
 import { canBookBlock } from "@/lib/scheduler";
 import { prisma } from "@/lib/prisma";
@@ -119,6 +124,38 @@ function toUser(user: { id: string; name: string; email: string; role: string; a
   };
 }
 
+export type Invite = {
+  token: string;
+  sitterId: string;
+  createdAt: string;
+  revoked: boolean;
+};
+
+function toConnection(connection: {
+  id: string;
+  sitterId: string;
+  parentId: string;
+  status: string;
+  createdAt: Date;
+}): Connection {
+  return {
+    id: connection.id,
+    sitterId: connection.sitterId,
+    parentId: connection.parentId,
+    status: connection.status as Connection["status"],
+    createdAt: connection.createdAt.toISOString(),
+  };
+}
+
+function toInvite(invite: { token: string; sitterId: string; createdAt: Date; revokedAt: Date | null }): Invite {
+  return {
+    token: invite.token,
+    sitterId: invite.sitterId,
+    createdAt: invite.createdAt.toISOString(),
+    revoked: Boolean(invite.revokedAt),
+  };
+}
+
 let seedPromise: Promise<void> | null = null;
 
 async function seedDatabase() {
@@ -146,6 +183,12 @@ async function seedDatabase() {
         ...booking,
         start: toWallClockDate(booking.start),
         end: toWallClockDate(booking.end),
+      })),
+    }),
+    prisma.connection.createMany({
+      data: defaultConnections.map((connection) => ({
+        ...connection,
+        createdAt: toWallClockDate(connection.createdAt),
       })),
     }),
   ]);
@@ -183,6 +226,12 @@ export async function getBookings(): Promise<Booking[]> {
 export async function getUserById(userId: string): Promise<User | null> {
   await ensureSeeded();
   const user = await prisma.user.findUnique({ where: { id: userId } });
+  return user ? toUser(user) : null;
+}
+
+export async function getUserByEmail(email: string): Promise<User | null> {
+  await ensureSeeded();
+  const user = await prisma.user.findFirst({ where: { email: normaliseEmail(email) } });
   return user ? toUser(user) : null;
 }
 
@@ -509,4 +558,146 @@ export async function getSession(token: string) {
 export async function deleteSession(token: string) {
   await ensureSeeded();
   await prisma.session.deleteMany({ where: { token } });
+}
+
+export async function getConnectionsForSitter(sitterId: string): Promise<Connection[]> {
+  await ensureSeeded();
+  const rows = await prisma.connection.findMany({ where: { sitterId }, orderBy: { createdAt: "asc" } });
+  return rows.map(toConnection);
+}
+
+export async function getConnectionsForParent(parentId: string): Promise<Connection[]> {
+  await ensureSeeded();
+  const rows = await prisma.connection.findMany({ where: { parentId }, orderBy: { createdAt: "asc" } });
+  return rows.map(toConnection);
+}
+
+export async function isConnected(sitterId: string, parentId: string): Promise<boolean> {
+  await ensureSeeded();
+  const row = await prisma.connection.findFirst({ where: { sitterId, parentId, status: "active" } });
+  return Boolean(row);
+}
+
+export async function requestConnection(parentId: string, sitterEmail: string): Promise<Connection> {
+  await ensureSeeded();
+  const sitter = await prisma.user.findFirst({ where: { email: normaliseEmail(sitterEmail), role: "sitter" } });
+
+  if (!sitter) {
+    throw new Error("No sitter was found with that email.");
+  }
+
+  const existing = await prisma.connection.findFirst({ where: { sitterId: sitter.id, parentId } });
+
+  if (existing?.status === "active") {
+    throw new Error("You're already connected with this sitter.");
+  }
+
+  if (existing?.status === "pending") {
+    throw new Error("A request to this sitter is already pending.");
+  }
+
+  const created = await prisma.connection.create({
+    data: {
+      id: `connection-${Date.now()}`,
+      sitterId: sitter.id,
+      parentId,
+      status: "pending",
+      createdAt: new Date(),
+    },
+  });
+
+  return toConnection(created);
+}
+
+export async function acceptConnectionRequest(connectionId: string, sitterId: string): Promise<Connection | null> {
+  await ensureSeeded();
+  const existing = await prisma.connection.findUnique({ where: { id: connectionId } });
+
+  if (!existing || existing.sitterId !== sitterId) {
+    return null;
+  }
+
+  const updated = await prisma.connection.update({
+    where: { id: connectionId },
+    data: { status: "active", respondedAt: new Date() },
+  });
+  return toConnection(updated);
+}
+
+export async function declineConnectionRequest(connectionId: string, sitterId: string): Promise<boolean> {
+  await ensureSeeded();
+  const existing = await prisma.connection.findUnique({ where: { id: connectionId } });
+
+  if (!existing || existing.sitterId !== sitterId) {
+    return false;
+  }
+
+  await prisma.connection.deleteMany({ where: { id: connectionId } });
+  return true;
+}
+
+export async function createInvite(sitterId: string): Promise<Invite> {
+  await ensureSeeded();
+  const invite = await prisma.invite.create({
+    data: { token: randomUUID(), sitterId, createdAt: new Date() },
+  });
+  return toInvite(invite);
+}
+
+export async function getInvitesForSitter(sitterId: string): Promise<Invite[]> {
+  await ensureSeeded();
+  const rows = await prisma.invite.findMany({ where: { sitterId }, orderBy: { createdAt: "desc" } });
+  return rows.map(toInvite);
+}
+
+export async function getInviteByToken(token: string): Promise<Invite | null> {
+  await ensureSeeded();
+  const invite = await prisma.invite.findUnique({ where: { token } });
+  return invite ? toInvite(invite) : null;
+}
+
+export async function revokeInvite(token: string, sitterId: string): Promise<Invite | null> {
+  await ensureSeeded();
+  const existing = await prisma.invite.findUnique({ where: { token } });
+
+  if (!existing || existing.sitterId !== sitterId) {
+    return null;
+  }
+
+  const updated = await prisma.invite.update({ where: { token }, data: { revokedAt: new Date() } });
+  return toInvite(updated);
+}
+
+export async function acceptInvite(token: string, parentId: string): Promise<Connection> {
+  await ensureSeeded();
+  const invite = await prisma.invite.findUnique({ where: { token } });
+
+  if (!invite || invite.revokedAt) {
+    throw new Error("This invite link is no longer valid.");
+  }
+
+  const existing = await prisma.connection.findFirst({ where: { sitterId: invite.sitterId, parentId } });
+
+  if (existing) {
+    if (existing.status === "active") {
+      return toConnection(existing);
+    }
+
+    const reactivated = await prisma.connection.update({
+      where: { id: existing.id },
+      data: { status: "active", respondedAt: new Date() },
+    });
+    return toConnection(reactivated);
+  }
+
+  const created = await prisma.connection.create({
+    data: {
+      id: `connection-${Date.now()}`,
+      sitterId: invite.sitterId,
+      parentId,
+      status: "active",
+      createdAt: new Date(),
+    },
+  });
+  return toConnection(created);
 }

@@ -98,6 +98,8 @@ function createFakePrisma() {
     availabilityBlock: createModel(),
     booking: createModel(),
     session: createModel(),
+    connection: createModel(),
+    invite: createModel(),
     $transaction: async (operations: Promise<unknown>[]) => Promise.all(operations),
   };
 }
@@ -336,5 +338,94 @@ describe("google tokens", () => {
     const tokens = await store.getGoogleTokens("charlotte");
     expect(tokens?.googleAccessToken).toBe("access-2");
     expect(tokens?.googleRefreshToken).toBe("refresh-1");
+  });
+});
+
+describe("requestConnection", () => {
+  it("creates a pending connection to an existing sitter", async () => {
+    const store = await loadStore();
+    const connection = await store.requestConnection("parent-2", "Emma@Sitterbook.app");
+
+    expect(connection.status).toBe("pending");
+    expect(connection.sitterId).toBe("emma");
+    expect(connection.parentId).toBe("parent-2");
+  });
+
+  it("rejects an email that does not belong to a sitter", async () => {
+    const store = await loadStore();
+    await expect(store.requestConnection("parent-2", "smiths@sitterbook.app")).rejects.toThrow(
+      "No sitter was found with that email.",
+    );
+  });
+
+  it("rejects a duplicate request while one is already pending", async () => {
+    const store = await loadStore();
+    await store.requestConnection("parent-2", "emma@sitterbook.app");
+
+    await expect(store.requestConnection("parent-2", "emma@sitterbook.app")).rejects.toThrow(
+      "A request to this sitter is already pending.",
+    );
+  });
+
+  it("rejects a request for a sitter the parent is already connected to", async () => {
+    const store = await loadStore();
+    await expect(store.requestConnection("parent-1", "charlotte@sitterbook.app")).rejects.toThrow(
+      "You're already connected with this sitter.",
+    );
+  });
+});
+
+describe("acceptConnectionRequest / declineConnectionRequest", () => {
+  it("activates a pending request for the owning sitter", async () => {
+    const store = await loadStore();
+    const requested = await store.requestConnection("parent-2", "emma@sitterbook.app");
+
+    const accepted = await store.acceptConnectionRequest(requested.id, "emma");
+    expect(accepted?.status).toBe("active");
+    expect(await store.isConnected("emma", "parent-2")).toBe(true);
+  });
+
+  it("refuses to accept a request owned by a different sitter", async () => {
+    const store = await loadStore();
+    const requested = await store.requestConnection("parent-2", "emma@sitterbook.app");
+
+    expect(await store.acceptConnectionRequest(requested.id, "charlotte")).toBeNull();
+  });
+
+  it("removes the connection when declined by the owning sitter", async () => {
+    const store = await loadStore();
+    const requested = await store.requestConnection("parent-2", "emma@sitterbook.app");
+
+    expect(await store.declineConnectionRequest(requested.id, "emma")).toBe(true);
+    expect(await store.getConnectionsForParent("parent-2")).toHaveLength(0);
+  });
+});
+
+describe("invites", () => {
+  it("creates an invite and accepts it into an active connection", async () => {
+    const store = await loadStore();
+    const invite = await store.createInvite("emma");
+
+    const connection = await store.acceptInvite(invite.token, "parent-2");
+    expect(connection.status).toBe("active");
+    expect(connection.sitterId).toBe("emma");
+    expect(await store.isConnected("emma", "parent-2")).toBe(true);
+  });
+
+  it("rejects accepting a revoked invite", async () => {
+    const store = await loadStore();
+    const invite = await store.createInvite("emma");
+    await store.revokeInvite(invite.token, "emma");
+
+    await expect(store.acceptInvite(invite.token, "parent-2")).rejects.toThrow(
+      "This invite link is no longer valid.",
+    );
+  });
+
+  it("refuses to revoke an invite owned by a different sitter", async () => {
+    const store = await loadStore();
+    const invite = await store.createInvite("emma");
+
+    expect(await store.revokeInvite(invite.token, "charlotte")).toBeNull();
   });
 });

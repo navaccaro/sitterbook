@@ -18,6 +18,16 @@ type FamilyProfile = {
   email: string;
 };
 
+type FamilyConnection = {
+  id: string;
+  status: "pending" | "active";
+  counterpartName: string;
+  counterpartEmail: string;
+};
+
+const pendingInviteStorageKey = "sitterbook.pendingInvite";
+
+
 function normaliseEmail(email: string) {
   return email.trim().toLowerCase();
 }
@@ -41,6 +51,10 @@ export default function ParentsPage() {
   const [isApproved, setIsApproved] = useState<boolean | null>(null);
   const [familyProfile, setFamilyProfile] = useState<FamilyProfile | null>(null);
   const [isSyncingCalendar, setIsSyncingCalendar] = useState(false);
+  const [connections, setConnections] = useState<FamilyConnection[]>([]);
+  const [connectSitterEmail, setConnectSitterEmail] = useState("");
+  const [connectError, setConnectError] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -77,13 +91,26 @@ export default function ParentsPage() {
 
         setFamilyProfile(storedFamily);
         setIsApproved(true);
-        const [nextAvailability, nextBookings] = await Promise.all([
+
+        const pendingInviteToken = window.localStorage.getItem(pendingInviteStorageKey);
+
+        if (pendingInviteToken) {
+          const acceptResponse = await fetch(`/api/invites/${pendingInviteToken}`, { method: "POST" });
+
+          if (acceptResponse.ok) {
+            window.localStorage.removeItem(pendingInviteStorageKey);
+          }
+        }
+
+        const [nextAvailability, nextBookings, nextConnections] = await Promise.all([
           fetch("/api/availability").then((response) => response.json() as Promise<AvailabilityBlock[]>),
           fetch("/api/bookings").then((response) => response.json() as Promise<Booking[]>),
+          fetch("/api/connections").then((response) => response.json() as Promise<FamilyConnection[]>),
         ]);
 
         setAvailability(nextAvailability);
         setCurrentBookings(nextBookings);
+        setConnections(nextConnections);
         setCandidateTimes(
           Object.fromEntries(
             nextAvailability.map((block) => [block.id, defaultCandidateTimes(block)]),
@@ -209,6 +236,32 @@ export default function ParentsPage() {
     setIsSyncingCalendar(false);
   }
 
+  async function requestSitterConnection(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setConnectError(null);
+
+    if (!connectSitterEmail.trim()) {
+      return;
+    }
+
+    setIsConnecting(true);
+    const response = await fetch("/api/connections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sitterEmail: connectSitterEmail.trim() }),
+    });
+    const data = (await response.json()) as FamilyConnection & { error?: string };
+    setIsConnecting(false);
+
+    if (!response.ok) {
+      setConnectError(data.error ?? "Unable to send that connection request.");
+      return;
+    }
+
+    setConnections((current) => [...current, data]);
+    setConnectSitterEmail("");
+  }
+
   return (
     <main className="mx-auto max-w-6xl bg-[#f7f4f1] px-6 py-10">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -239,6 +292,46 @@ export default function ParentsPage() {
       {message && (
         <p role="status" className="mb-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{message}</p>
       )}
+
+      <section className="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Your circle</p>
+        <h2 className="mt-1 text-xl font-bold text-slate-900">Connect with a sitter you know</h2>
+        <p className="mt-2 text-sm text-slate-500">Enter a sitter&apos;s email to send a connection request. Once they accept, you&apos;ll see their availability here.</p>
+        <form onSubmit={requestSitterConnection} className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <input
+            type="email"
+            required
+            placeholder="sitter@example.com"
+            value={connectSitterEmail}
+            onChange={(event) => setConnectSitterEmail(event.target.value)}
+            className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none ring-violet-200 focus:ring-4"
+          />
+          <button
+            type="submit"
+            disabled={isConnecting}
+            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-wait disabled:opacity-60"
+          >
+            {isConnecting ? "Sending…" : "Send request"}
+          </button>
+        </form>
+        {connectError && <p className="mt-2 text-sm text-rose-600">{connectError}</p>}
+
+        {connections.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {connections.map((connection) => (
+              <div key={connection.id} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{connection.counterpartName}</p>
+                  <p className="text-xs text-slate-500">{connection.counterpartEmail}</p>
+                </div>
+                <span className={connection.status === "active" ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700" : "rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700"}>
+                  {connection.status === "active" ? "Connected" : "Pending"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {openBlocks.map((block) => {

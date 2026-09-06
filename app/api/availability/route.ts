@@ -3,12 +3,26 @@ import {
   createAvailabilityBlock,
   deleteAvailabilityBlock,
   getAvailabilityBlocks,
+  getConnectionsForParent,
+  getUserById,
   updateAvailabilityBlock,
 } from "@/lib/store";
 import { getCurrentSitter } from "@/lib/sitter-auth";
+import { getCurrentSession } from "@/lib/auth";
 
 export async function GET() {
   const blocks = await getAvailabilityBlocks();
+  const session = await getCurrentSession();
+  const user = session ? await getUserById(session.userId) : null;
+
+  if (user?.role === "parent") {
+    const connections = await getConnectionsForParent(session!.userId);
+    const connectedSitterIds = new Set(
+      connections.filter((connection) => connection.status === "active").map((connection) => connection.sitterId),
+    );
+    return NextResponse.json(blocks.filter((block) => connectedSitterIds.has(block.sitterId)));
+  }
+
   return NextResponse.json(blocks);
 }
 

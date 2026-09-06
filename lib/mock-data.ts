@@ -32,6 +32,16 @@ export type Booking = {
   googleEventId?: string;
 };
 
+export type ConnectionStatus = "pending" | "active";
+
+export type Connection = {
+  id: string;
+  sitterId: string;
+  parentId: string;
+  status: ConnectionStatus;
+  createdAt: string;
+};
+
 export const users: User[] = [
   {
     id: "admin-1",
@@ -120,6 +130,11 @@ export const bookings: Booking[] = [
     parentName: "The Smiths",
     notes: "Bedtime routine is written on the fridge.",
   },
+];
+
+export const connections: Connection[] = [
+  { id: "connection-1", sitterId: "charlotte", parentId: "parent-1", status: "active", createdAt: "2026-08-01T00:00:00" },
+  { id: "connection-2", sitterId: "emma", parentId: "parent-1", status: "active", createdAt: "2026-08-01T00:00:00" },
 ];
 
 export function getUserById(id: string) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { cancelBooking, createBookingForBlock, getAvailabilityBlocks, getBookings, getRegistrationRequests, getUserById } from "@/lib/store";
+import { cancelBooking, createBookingForBlock, getAvailabilityBlocks, getBookings, getRegistrationRequests, getUserById, isConnected } from "@/lib/store";
 import { getCurrentSession } from "@/lib/auth";
 
 function normaliseEmail(email: string) {
@@ -65,6 +65,10 @@ export async function POST(request: Request) {
 
   if (!block) {
     return NextResponse.json({ error: "Availability block not found." }, { status: 404 });
+  }
+
+  if (!(await isConnected(block.sitterId, body.parentId))) {
+    return NextResponse.json({ error: "Connect with this sitter before booking their time." }, { status: 403 });
   }
 
   try {

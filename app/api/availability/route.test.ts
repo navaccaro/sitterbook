@@ -1,16 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/sitter-auth", () => ({ getCurrentSitter: vi.fn() }));
+vi.mock("@/lib/auth", () => ({ getCurrentSession: vi.fn() }));
 vi.mock("@/lib/store", () => ({
   createAvailabilityBlock: vi.fn(),
   deleteAvailabilityBlock: vi.fn(),
   getAvailabilityBlocks: vi.fn(),
   updateAvailabilityBlock: vi.fn(),
+  getConnectionsForParent: vi.fn(),
+  getUserById: vi.fn(),
 }));
 
 import { getCurrentSitter } from "@/lib/sitter-auth";
-import { createAvailabilityBlock, deleteAvailabilityBlock, getAvailabilityBlocks, updateAvailabilityBlock } from "@/lib/store";
-import { DELETE, POST } from "@/app/api/availability/route";
+import { getCurrentSession } from "@/lib/auth";
+import {
+  createAvailabilityBlock,
+  deleteAvailabilityBlock,
+  getAvailabilityBlocks,
+  getConnectionsForParent,
+  getUserById,
+  updateAvailabilityBlock,
+} from "@/lib/store";
+import { DELETE, GET, POST } from "@/app/api/availability/route";
 
 const charlotteSession = { userId: "charlotte", email: "charlotte@sitterbook.app" };
 const emmasBlock = {
@@ -35,7 +46,44 @@ beforeEach(() => {
   vi.mocked(deleteAvailabilityBlock).mockReset();
   vi.mocked(getAvailabilityBlocks).mockReset();
   vi.mocked(updateAvailabilityBlock).mockReset();
+  vi.mocked(getCurrentSession).mockReset();
+  vi.mocked(getConnectionsForParent).mockReset();
+  vi.mocked(getUserById).mockReset();
   vi.mocked(getAvailabilityBlocks).mockResolvedValue([emmasBlock] as never);
+  vi.mocked(getCurrentSession).mockResolvedValue(null);
+});
+
+describe("GET /api/availability", () => {
+  const charlotteBlock = { ...emmasBlock, id: "block-charlotte", sitterId: "charlotte" };
+
+  beforeEach(() => {
+    vi.mocked(getAvailabilityBlocks).mockResolvedValue([emmasBlock, charlotteBlock] as never);
+  });
+
+  it("returns every block when there is no session", async () => {
+    const data = (await (await GET()).json()) as Array<{ id: string }>;
+    expect(data).toHaveLength(2);
+  });
+
+  it("returns every block for a sitter or admin session", async () => {
+    vi.mocked(getCurrentSession).mockResolvedValue({ userId: "charlotte", email: "charlotte@sitterbook.app" } as never);
+    vi.mocked(getUserById).mockResolvedValue({ id: "charlotte", role: "sitter", approved: true } as never);
+
+    const data = (await (await GET()).json()) as Array<{ id: string }>;
+    expect(data).toHaveLength(2);
+  });
+
+  it("filters blocks to sitters the parent is actively connected to", async () => {
+    vi.mocked(getCurrentSession).mockResolvedValue({ userId: "parent-1", email: "smiths@sitterbook.app" } as never);
+    vi.mocked(getUserById).mockResolvedValue({ id: "parent-1", role: "parent", approved: true } as never);
+    vi.mocked(getConnectionsForParent).mockResolvedValue([
+      { id: "c1", sitterId: "charlotte", parentId: "parent-1", status: "active", createdAt: "2026-08-01T00:00:00" },
+      { id: "c2", sitterId: "emma", parentId: "parent-1", status: "pending", createdAt: "2026-08-01T00:00:00" },
+    ] as never);
+
+    const data = (await (await GET()).json()) as Array<{ sitterId: string }>;
+    expect(data.map((block) => block.sitterId)).toEqual(["charlotte"]);
+  });
 });
 
 describe("POST /api/availability", () => {

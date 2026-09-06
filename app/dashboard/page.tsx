@@ -14,6 +14,20 @@ type Draft = {
   endTime: string;
 };
 
+type CircleConnection = {
+  id: string;
+  status: "pending" | "active";
+  counterpartName: string;
+  counterpartEmail: string;
+};
+
+type SitterInvite = {
+  token: string;
+  sitterId: string;
+  createdAt: string;
+  revoked: boolean;
+};
+
 const emptyDraft: Draft = {
   label: "",
   date: "2026-09-14",
@@ -61,6 +75,9 @@ export default function DashboardPage() {
   const [calendarMonth, setCalendarMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied">("checking");
   const [sitterId, setSitterId] = useState<string | null>(null);
+  const [connections, setConnections] = useState<CircleConnection[]>([]);
+  const [invites, setInvites] = useState<SitterInvite[]>([]);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -77,10 +94,15 @@ export default function DashboardPage() {
       const currentSitterId = sessionData.session.userId;
       setSitterId(currentSitterId);
 
-      const [nextBlocks, nextBookings] = await Promise.all([
+      const [nextBlocks, nextBookings, nextConnections, nextInvites] = await Promise.all([
         fetch("/api/availability").then((response) => response.json() as Promise<AvailabilityBlock[]>),
         fetch("/api/bookings").then((response) => response.json() as Promise<Booking[]>),
+        fetch("/api/connections").then((response) => response.json() as Promise<CircleConnection[]>),
+        fetch("/api/invites").then((response) => response.json() as Promise<SitterInvite[]>),
       ]);
+
+      setConnections(nextConnections);
+      setInvites(nextInvites);
 
       setBlocks(nextBlocks.filter((block) => block.sitterId === currentSitterId));
       setBookings(nextBookings);
@@ -218,6 +240,61 @@ export default function DashboardPage() {
     setSharedId(blockId);
     window.setTimeout(() => setSharedId(null), 1800);
   }
+
+  async function createCircleInvite() {
+    const response = await fetch("/api/invites", { method: "POST" });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const invite = (await response.json()) as SitterInvite;
+    setInvites((current) => [invite, ...current]);
+  }
+
+  async function copyInviteLink(token: string) {
+    const url = `${window.location.origin}/invite/${token}`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      return;
+    }
+
+    setCopiedToken(token);
+    window.setTimeout(() => setCopiedToken(null), 1800);
+  }
+
+  async function revokeCircleInvite(token: string) {
+    const response = await fetch(`/api/invites?token=${encodeURIComponent(token)}`, { method: "DELETE" });
+
+    if (!response.ok) {
+      return;
+    }
+
+    setInvites((current) => current.map((invite) => (invite.token === token ? { ...invite, revoked: true } : invite)));
+  }
+
+  async function respondToConnectionRequest(connectionId: string, accept: boolean) {
+    const response = await fetch("/api/connections", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: connectionId, accept }),
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    setConnections((current) =>
+      accept
+        ? current.map((connection) => (connection.id === connectionId ? { ...connection, status: "active" } : connection))
+        : current.filter((connection) => connection.id !== connectionId),
+    );
+  }
+
+  const pendingConnections = connections.filter((connection) => connection.status === "pending");
+  const activeConnections = connections.filter((connection) => connection.status === "active");
 
   return (
     <main className="min-h-screen bg-[#f7f4f1]">
@@ -421,6 +498,88 @@ export default function DashboardPage() {
                     </a>
                   </div>
                 ))}
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Your circle</p>
+              <h2 className="mt-1 text-xl font-bold text-slate-900">Invite families you know</h2>
+              <p className="mt-2 text-sm text-slate-500">Share a link so a family you already know can connect with you. Only connected families can see your availability and book time.</p>
+              <button onClick={createCircleInvite} className="mt-4 w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
+                Create invite link
+              </button>
+
+              {invites.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {invites.map((invite) => {
+                    const inviteUrl = typeof window !== "undefined" ? `${window.location.origin}/invite/${invite.token}` : "";
+                    const mailBody = `Hi! Join my sitter circle on SitterBook so we can schedule babysitting: ${inviteUrl}`;
+
+                    return (
+                      <div key={invite.token} className="rounded-2xl bg-slate-50 p-3">
+                        <p className="truncate text-xs font-medium text-slate-500">{inviteUrl}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {invite.revoked ? (
+                            <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-500">Revoked</span>
+                          ) : (
+                            <>
+                              <button onClick={() => copyInviteLink(invite.token)} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white">
+                                {copiedToken === invite.token ? "Copied" : "Copy link"}
+                              </button>
+                              <a
+                                href={`mailto:?subject=${encodeURIComponent("Join my SitterBook circle")}&body=${encodeURIComponent(mailBody)}`}
+                                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white"
+                              >
+                                Email invite
+                              </a>
+                              <button onClick={() => revokeCircleInvite(invite.token)} className="rounded-full px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">
+                                Revoke
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            {pendingConnections.length > 0 && (
+              <section className="rounded-3xl border border-amber-200 bg-amber-50/60 p-5 shadow-sm sm:p-6">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700">Requests</p>
+                <h2 className="mt-1 text-xl font-bold text-slate-900">Families asking to connect</h2>
+                <div className="mt-4 space-y-3">
+                  {pendingConnections.map((connection) => (
+                    <div key={connection.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{connection.counterpartName}</p>
+                        <p className="text-xs text-slate-500">{connection.counterpartEmail}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => respondToConnectionRequest(connection.id, true)} className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500">Accept</button>
+                        <button onClick={() => respondToConnectionRequest(connection.id, false)} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">Decline</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Connected</p>
+              <h2 className="mt-1 text-xl font-bold text-slate-900">Families in your circle</h2>
+              <div className="mt-4 space-y-2">
+                {activeConnections.length === 0 ? (
+                  <p className="text-sm text-slate-500">No connected families yet.</p>
+                ) : (
+                  activeConnections.map((connection) => (
+                    <div key={connection.id} className="rounded-2xl bg-slate-50 p-3">
+                      <p className="text-sm font-semibold text-slate-900">{connection.counterpartName}</p>
+                      <p className="text-xs text-slate-500">{connection.counterpartEmail}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </section>
           </div>
